@@ -34,6 +34,17 @@ body {
     font-size:150%;
     font-weight:bold;
 }
+.repo {
+    font-size:75%;
+    line-height:100%;
+    margin-top:-5px;
+}
+.repo:before {
+    content:"[";
+}
+.repo:after {
+    content:"]";
+}
 
 a {
     color:#DDD;
