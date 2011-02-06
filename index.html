@@ -1,1 +1,19 @@
-<h1>jussik</h1>
+<!DOCTYPE html>
+<html><head>
+    <title>JussiK @ GitHub</title>
+    <link rel="stylesheet" type="text/css" href="page.css" />
+    <script type="application/javascript" src="jquery-1.4.4.min.js"></script>
+    <script type="application/javascript">
+        $(window).ready(function() {
+            $("#content")
+                .css("margin-top",-$("#content").height()/2)
+                .animate({opacity:1},1000);
+        });
+    </script>
+</head><body>
+    <div id="pad"></div>
+    <div id="content">
+        <div class="header">Jussi Kosunen @ GitHub</div>
+        <a href="guitar/">Guitar Builder</a>
+    </div>
+</body></html>
