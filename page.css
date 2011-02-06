@@ -18,6 +18,7 @@ body {
     font-size:10pt;
     background-color:#666;
     color:#FFF;
+    line-height:250%;
 }
 
 #pad {
@@ -31,7 +32,6 @@ body {
 
 .header {
     font-size:150%;
-    margin-bottom:12px;
     font-weight:bold;
 }
 
