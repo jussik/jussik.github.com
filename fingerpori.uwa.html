@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:widget="http://www.netvibes.com/ns/">
+    <head>
+        <!-- Application Metas -->
+        <title>Fingerpori</title>
+        <meta name="author" content="Jussi Kosunen" />
+        <meta name="description" content="Shows the latest Fingerpori comic" />
+
+        <!-- Application Standalone emulation files -->
+        <link rel="stylesheet" type="text/css"
+            href="http://uwa.netvibes.com/lib/c/UWA/assets/css/standalone.css" />
+        <script type="text/javascript"
+            src="http://uwa.netvibes.com/lib/c/UWA/js/UWA_Standalone_Alone.js"></script>
+
+        <!-- Application JavaScript Source -->
+        <script type="text/javascript">
+        //<![CDATA[
+            var fpWidget = {
+				dataInit: function() {
+					UWA.Data.request('http://www.hs.fi/fingerpori/', {
+						method: 'GET',
+						type: 'html',
+						cache: 3600,
+						onComplete: fpWidget.showComic,
+						onFailure: fpWidget.showError
+					})
+				},
+                showComic: function(page) {
+					try {
+						var src = (new DOMParser).parseFromString(page, 'text/html').querySelector('#full-comic>div>img').src;
+						console.log(src);
+						widget.setBody({
+							tag: 'a',
+							href: 'http://www.hs.fi/fingerpori/',
+							html: {
+								tag: 'img',
+								src: src,
+								alt: 'Fingerpori',
+								styles: {
+									maxWidth: '100%',
+									maxHeight: '800px',
+									width: 'auto',
+									height: 'auto',
+								}
+							}
+						});
+					} catch(err) {
+						fpWidget.showError(err)
+					}
+                },
+				showError: function(err) {
+					widget.setBody({
+						tag: 'span',
+						text: 'Could not fetch comic metadata (' + err + ')'
+					});
+				}
+            };
+
+            widget.addEvent('onLoad', fpWidget.dataInit);
+        //]]>
+        </script>
+      </head>
+      <body>
+            <p>Loading...</p>
+      </body>
+</html>
