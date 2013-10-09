@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:widget="http://www.netvibes.com/ns/">
+    <head>
+        <!-- Application Metas -->
+        <title>xkcd</title>
+        <meta name="author" content="Jussi Kosunen" />
+        <meta name="description" content="Shows the latest xkcd comic" />
+
+        <!-- Application Standalone emulation files -->
+        <link rel="stylesheet" type="text/css"
+            href="http://uwa.netvibes.com/lib/c/UWA/assets/css/standalone.css" />
+        <script type="text/javascript"
+            src="http://uwa.netvibes.com/lib/c/UWA/js/UWA_Standalone_Alone.js"></script>
+		
+		<!-- favicon -->
+		<link rel="icon" type="image/png" href="http://www.xkcd.com/favicon.ico" />
+
+        <!-- Application JavaScript Source -->
+        <script type="text/javascript">
+        //<![CDATA[
+            var xkcdWidget = {
+				dataInit: function() {
+					UWA.Data.request('http://xkcd.com/info.0.json', {
+						method: 'GET',
+						type: 'json',
+						cache: 3600,
+						onComplete: xkcdWidget.showComic,
+						onFailure: xkcdWidget.jsonError
+					});
+				},
+                showComic: function(comic) {
+                    widget.setBody({
+						tag: 'div',
+						styles: { textAlign: 'center' },
+						html: [{
+							tag: 'h2',
+							html: {
+								tag: 'a',
+								href: 'http://xkcd.com/' + comic.num + '/',
+								text: comic.safe_title
+							}
+						}, {
+							tag: 'a',
+							href: 'http://xkcd.com/' + comic.num + '/',
+							html: {
+								tag: 'img',
+								src: comic.img,
+								title: comic.alt,
+								alt: comic.alt,
+								styles: {
+									maxWidth: '100%',
+									maxHeight: '800px',
+									width: 'auto',
+									height: 'auto',
+								}
+							}
+						}, {
+							tag: 'div',
+							text: comic.alt
+						}]
+					});
+                },
+				jsonError: function() {
+					widget.setBody({
+						tag: 'span',
+						text: 'Could not fetch comic metadata'
+					});
+				}
+            };
+
+            widget.addEvent('onLoad', xkcdWidget.dataInit);
+        //]]>
+        </script>
+      </head>
+      <body>
+            <p>Loading...</p>
+      </body>
+</html>
