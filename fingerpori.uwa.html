@@ -20,16 +20,15 @@
 				dataInit: function() {
 					UWA.Data.request('http://www.hs.fi/fingerpori/', {
 						method: 'GET',
-						type: 'html',
+						type: 'text',
 						cache: 3600,
 						onComplete: fpWidget.showComic,
 						onFailure: fpWidget.showError
-					})
+					});
 				},
                 showComic: function(page) {
 					try {
 						var src = (new DOMParser).parseFromString(page, 'text/html').querySelector('#full-comic>div>img').src;
-						console.log(src);
 						widget.setBody({
 							tag: 'a',
 							href: 'http://www.hs.fi/fingerpori/',
@@ -46,10 +45,11 @@
 							}
 						});
 					} catch(err) {
-						fpWidget.showError(err)
+						fpWidget.showError(err);
 					}
                 },
 				showError: function(err) {
+					console && console.error(err);
 					widget.setBody({
 						tag: 'span',
 						text: 'Could not fetch comic metadata (' + err + ')'
