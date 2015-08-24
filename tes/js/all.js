@@ -1,5 +1,516 @@
 var tesp;
 (function (tesp) {
+    var Application = (function () {
+        function Application() {
+            var _this = this;
+            this.loaded = window.fetch("data/data.json")
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
+                _this.world = new tesp.World(_this, data);
+                _this.map = new tesp.Map(_this, document.getElementById("map"));
+                _this.controls = new tesp.Controls(_this, document.getElementById("controls"));
+                _this.menu = new tesp.ContextMenu(_this, document.getElementById("context-menu"));
+                document.body.onmousedown = document.body.oncontextmenu = function (ev) { return _this.menu.hide(); };
+                _this.toggleClass("loading", false);
+                return _this;
+            });
+        }
+        Application.prototype.toggleClass = function (name, enabled) {
+            if (enabled) {
+                document.body.classList.add(name);
+            }
+            else {
+                document.body.classList.remove(name);
+            }
+        };
+        return Application;
+    })();
+    tesp.Application = Application;
+    tesp.app = new Application();
+})(tesp || (tesp = {}));
+var tesp;
+(function (tesp) {
+    var ContextMenu = (function () {
+        function ContextMenu(app, element) {
+            var _this = this;
+            this.app = app;
+            this.element = element;
+            this.element.oncontextmenu = this.element.onmousedown = function (ev) { return ev.stopPropagation(); };
+            this.element.onclick = function (ev) {
+                ev.stopPropagation();
+                var item = event.target;
+                if (item.classList.contains("link")) {
+                    var context = item.dataset['contextSet'];
+                    if (context !== undefined) {
+                        var data = _this.element.dataset;
+                        var nodeId = data['nodeId'];
+                        var node;
+                        if (nodeId !== undefined && (node = _this.app.world.findNodeById(+nodeId)) != null) {
+                            _this.app.world.setContextNode(context, node);
+                        }
+                        else {
+                            _this.app.world.setContextLocation(context, +data['posX'], +data['posY']);
+                        }
+                    }
+                    else {
+                        context = item.dataset['contextUnset'];
+                        if (context !== undefined) {
+                            _this.app.world.clearContext(context);
+                        }
+                    }
+                    _this.hide();
+                }
+            };
+        }
+        ContextMenu.prototype.openNode = function (node) {
+            this.open(node.pos.x, node.pos.y, node);
+        };
+        ContextMenu.prototype.open = function (x, y, node) {
+            var _this = this;
+            if (node != null && !node.permanent)
+                node = null; // disallow operations on temporary nodes
+            var lines = [];
+            var landmark = this.app.world.getLandmarkName(x, y);
+            if (node != null) {
+                var feat = this.app.world.features.byName[node.type];
+                if (feat != null) {
+                    lines.push(feat.location || feat.name);
+                    lines.push(node.name);
+                }
+                else {
+                    lines.push(node.longName);
+                }
+                if (landmark != null && landmark !== node.name) {
+                    lines.push(landmark);
+                }
+                x = node.pos.x;
+                y = node.pos.y;
+            }
+            else if (landmark != null) {
+                lines.push(landmark);
+            }
+            var region = this.app.world.getRegionName(x, y);
+            if (region != null) {
+                lines.push(region + " Region");
+            }
+            var separator = this.element.getElementsByClassName("separator")[0];
+            var child;
+            while ((child = this.element.firstElementChild) != separator) {
+                this.element.removeChild(child);
+            }
+            lines.forEach(function (l) {
+                var item = document.createElement("li");
+                item.textContent = l;
+                _this.element.insertBefore(item, separator);
+            });
+            this.element.style.left = x + "px";
+            this.element.style.top = y + "px";
+            var data = this.element.dataset;
+            if (node != null) {
+                data['nodeId'] = node.id + '';
+                delete data['posX'];
+                delete data['posY'];
+            }
+            else {
+                data['posX'] = x + '';
+                data['posY'] = y + '';
+                delete data['nodeId'];
+            }
+            this.element.style.display = "inherit";
+            var scrollX = pageXOffset, scrollY = pageYOffset;
+            var rect = this.element.getBoundingClientRect();
+            if (rect.left < 10) {
+                scrollX = pageXOffset + rect.left - 10;
+            }
+            else if (rect.right > innerWidth - 27) {
+                scrollX = pageXOffset + rect.right - innerWidth + 27;
+            }
+            if (rect.top < 10) {
+                scrollY = pageYOffset + rect.top - 10;
+            }
+            else if (rect.bottom > innerHeight - 27) {
+                scrollY = pageYOffset + rect.bottom - innerHeight + 27;
+            }
+            if (scrollX !== pageXOffset || scrollY !== pageYOffset)
+                scroll(scrollX, scrollY);
+        };
+        ContextMenu.prototype.hide = function () {
+            this.element.style.display = "none";
+        };
+        return ContextMenu;
+    })();
+    tesp.ContextMenu = ContextMenu;
+})(tesp || (tesp = {}));
+var tesp;
+(function (tesp) {
+    var Controls = (function () {
+        function Controls(app, element) {
+            var _this = this;
+            this.app = app;
+            this.element = element;
+            this.app.world.addListener(function (reason) {
+                if (reason === tesp.WorldUpdate.PathUpdate)
+                    _this.updatePath();
+                else if (reason === tesp.WorldUpdate.SourceChange)
+                    _this.updateNodeInfo('.control-source-info', _this.app.world.sourceNode);
+                else if (reason === tesp.WorldUpdate.DestinationChange)
+                    _this.updateNodeInfo('.control-destination-info', _this.app.world.destNode);
+                else if (reason === tesp.WorldUpdate.MarkChange)
+                    _this.updateNodeInfo('.control-mark-info', _this.app.world.markNode);
+            });
+            var nodeSearchIndex = {};
+            var searchInput = element.querySelector('.search-input');
+            var datalist = element.querySelector('#search-list');
+            this.app.world.nodes
+                .concat(this.app.world.landmarks.map(function (a) { return a.target; }))
+                .forEach(function (n) {
+                var opt = document.createElement("option");
+                var feat = _this.app.world.features.byName[n.type];
+                var value = feat ? n.name + " (" + _this.app.world.features.byName[n.type].name + ")" : n.name;
+                nodeSearchIndex[value] = n;
+                opt.value = value;
+                datalist.appendChild(opt);
+            });
+            for (var child = element.firstElementChild; child; child = child.nextElementSibling) {
+                var name = child.dataset['controlContainer'];
+                if (name === "path") {
+                    this.pathContainer = child;
+                }
+                else if (name === "features") {
+                    this.featuresContainer = child;
+                }
+            }
+            this.drawFeatures();
+            searchInput.oninput = function (ev) {
+                var node = nodeSearchIndex[searchInput.value];
+                if (node !== undefined) {
+                    _this.app.menu.openNode(node);
+                }
+                else {
+                    _this.app.menu.hide();
+                }
+            };
+        }
+        Controls.prototype.updateNodeInfo = function (selector, node) {
+            var _this = this;
+            var el = this.element.querySelector(selector);
+            if (node != null) {
+                el.textContent = node.longName;
+                el.onclick = function (ev) { return _this.app.menu.openNode(node); };
+            }
+            else {
+                el.textContent = "";
+                el.onclick = null;
+            }
+        };
+        Controls.prototype.updatePath = function () {
+            var child;
+            while (child = this.pathContainer.firstElementChild) {
+                this.pathContainer.removeChild(child);
+            }
+            var pathNode = this.app.world.pathEnd;
+            while (pathNode) {
+                this.pathContainer.insertBefore(this.drawPathNode(pathNode), this.pathContainer.firstElementChild);
+                pathNode = pathNode.prev;
+            }
+        };
+        Controls.prototype.drawPathNode = function (pathNode) {
+            var _this = this;
+            var el = document.createElement("div");
+            var icon, text, linkText;
+            var node = pathNode.node;
+            var edge = pathNode.prevEdge;
+            if (edge) {
+                var action;
+                if (edge.type === "walk") {
+                    action = "Walk";
+                    icon = "compass";
+                }
+                else {
+                    var feat = this.app.world.features.byName[edge.type];
+                    if (feat) {
+                        action = feat.verb || feat.name;
+                        icon = feat.icon;
+                    }
+                    else {
+                        action = edge.type;
+                        icon = "question";
+                    }
+                }
+                text = " " + action + " to ";
+                linkText = node.type == edge.type ? node.name : node.longName;
+            }
+            else {
+                icon = "map-marker";
+                text = " ";
+                linkText = node.longName;
+            }
+            var i = document.createElement("i");
+            i.classList.add("path-icon");
+            i.classList.add("fa");
+            i.classList.add("fa-" + icon);
+            el.appendChild(i);
+            el.appendChild(document.createTextNode(text));
+            var a = document.createElement("a");
+            a.textContent = linkText;
+            a.onclick = function () { return _this.app.menu.openNode(node); };
+            el.appendChild(a);
+            return el;
+        };
+        Controls.prototype.drawFeatures = function () {
+            var _this = this;
+            this.app.world.features.forEach(function (f) {
+                var el = document.createElement("div");
+                el.textContent = f.name + ":";
+                el.appendChild(_this.drawCheckbox(function (val) {
+                    f.hidden = !val;
+                    _this.app.world.trigger(tesp.WorldUpdate.FeatureChange);
+                }, !f.hidden));
+                if (!f.visualOnly)
+                    el.appendChild(_this.drawCheckbox(function (val) {
+                        f.disabled = !val;
+                        _this.app.world.trigger(tesp.WorldUpdate.FeatureChange);
+                    }, !f.disabled));
+                _this.featuresContainer.appendChild(el);
+            });
+        };
+        Controls.prototype.drawCheckbox = function (onchange, initial) {
+            var input = document.createElement("input");
+            input.type = "checkbox";
+            input.onchange = function (ev) { return onchange(input.checked); };
+            input.checked = initial;
+            return input;
+        };
+        return Controls;
+    })();
+    tesp.Controls = Controls;
+})(tesp || (tesp = {}));
+var tesp;
+(function (tesp) {
+    var Map = (function () {
+        function Map(app, element) {
+            var _this = this;
+            this.app = app;
+            this.element = element;
+            this.app.world.addListener(function (reason) {
+                if (reason === tesp.WorldUpdate.PathUpdate)
+                    _this.renderPath();
+                else if (reason === tesp.WorldUpdate.SourceChange)
+                    _this.renderSource();
+                else if (reason === tesp.WorldUpdate.DestinationChange)
+                    _this.renderDestination();
+                else if (reason === tesp.WorldUpdate.MarkChange)
+                    _this.renderMark();
+                else if (reason === tesp.WorldUpdate.FeatureChange)
+                    _this.updateFeatures();
+            });
+            element.onclick = function (ev) {
+                var node = _this.getEventNode(ev);
+                if (node != null) {
+                    _this.triggerContextMenu(ev, node);
+                }
+            };
+            element.oncontextmenu = function (ev) {
+                ev.preventDefault();
+                ev.stopPropagation();
+                _this.triggerContextMenu(ev);
+            };
+            this.renderNodes();
+            this.renderPath();
+            this.renderMark();
+            this.renderGrid();
+            this.updateFeatures();
+            this.initDragScroll();
+        }
+        Map.prototype.getEventNode = function (event) {
+            var target = event.target;
+            if (target.classList.contains('map-node')) {
+                var id = target.dataset['nodeId'];
+                if (id !== undefined) {
+                    return this.app.world.findNodeById(+id);
+                }
+            }
+            return null;
+        };
+        Map.prototype.triggerContextMenu = function (ev, node) {
+            this.app.menu.open(ev.pageX, ev.pageY, node || this.getEventNode(ev));
+        };
+        Map.prototype.initDragScroll = function () {
+            var _this = this;
+            var img = this.element.querySelector('img');
+            var mousedown = false, prevX, prevY;
+            var stop = function (ev) {
+                mousedown = false;
+                _this.app.toggleClass("scrolling", false);
+                ev.preventDefault();
+            };
+            var start = function (ev) {
+                mousedown = true;
+                prevX = ev.clientX;
+                prevY = ev.clientY;
+                _this.app.toggleClass("scrolling", true);
+                ev.preventDefault();
+            };
+            img.onmousedown = function (ev) {
+                if (ev.button === 0 && ev.target === img) {
+                    start(ev);
+                }
+            };
+            img.onmouseup = function (ev) {
+                if (mousedown) {
+                    stop(ev);
+                }
+            };
+            img.onmousemove = function (ev) {
+                if (!mousedown && ev.which === 1) {
+                    start(ev);
+                }
+                if (mousedown) {
+                    if (ev.which !== 1) {
+                        stop(ev);
+                    }
+                    else {
+                        scroll(pageXOffset + prevX - ev.clientX, pageYOffset + prevY - ev.clientY);
+                        prevX = ev.clientX;
+                        prevY = ev.clientY;
+                        ev.preventDefault();
+                    }
+                }
+            };
+        };
+        Map.prototype.renderNodes = function () {
+            var _this = this;
+            if (this.nodeContainer != null)
+                this.nodeContainer.parentElement.removeChild(this.nodeContainer);
+            this.nodeContainer = document.createElement("div");
+            this.element.appendChild(this.nodeContainer);
+            this.app.world.nodes
+                .forEach(function (n) { return _this.nodeContainer.appendChild(_this.drawNode(n)); });
+            if (this.edgeContainer != null)
+                this.edgeContainer.parentElement.removeChild(this.edgeContainer);
+            this.edgeContainer = document.createElement("div");
+            this.element.appendChild(this.edgeContainer);
+            this.app.world.edges.forEach(function (e) {
+                return _this.edgeContainer.appendChild(_this.drawEdge(e.srcNode.pos, e.destNode.pos, e.srcNode.type, "map-transport-edge"));
+            });
+            if (this.areaContainer != null)
+                this.areaContainer.parentElement.removeChild(this.areaContainer);
+            this.areaContainer = document.createElement("div");
+            this.element.appendChild(this.areaContainer);
+            this.app.world.areas
+                .forEach(function (a) {
+                var type = a.target.type;
+                var prev = null;
+                for (var i = 0; i < a.rows.length; i++) {
+                    var row = a.rows[i];
+                    if (prev != null) {
+                        if (row.x1 !== prev.x1) {
+                            _this.areaContainer.appendChild(_this.drawCellEdge(row.x1, row.y, prev.x1, row.y, type));
+                        }
+                        if (row.x2 !== prev.x2) {
+                            _this.areaContainer.appendChild(_this.drawCellEdge(row.x2 + 1, row.y, prev.x2 + 1, row.y, type));
+                        }
+                    }
+                    else {
+                        _this.areaContainer.appendChild(_this.drawCellEdge(row.x1, row.y, row.x2 + 1, row.y, type));
+                    }
+                    _this.areaContainer.appendChild(_this.drawCellEdge(row.x1, row.y, row.x1, row.y + 1, type));
+                    _this.areaContainer.appendChild(_this.drawCellEdge(row.x2 + 1, row.y, row.x2 + 1, row.y + 1, type));
+                    prev = row;
+                }
+                _this.areaContainer.appendChild(_this.drawCellEdge(prev.x1, prev.y + 1, prev.x2 + 1, prev.y + 1, type));
+            });
+        };
+        Map.prototype.drawCellEdge = function (x1, y1, x2, y2, type) {
+            return this.drawEdge(tesp.Vec2.fromCell(x1, y1), tesp.Vec2.fromCell(x2, y2), type, "map-area");
+        };
+        Map.prototype.renderPath = function () {
+            if (this.pathContainer != null)
+                this.pathContainer.parentElement.removeChild(this.pathContainer);
+            var pathNode = this.app.world.pathEnd;
+            if (pathNode == null) {
+                this.pathContainer = null;
+                return;
+            }
+            this.pathContainer = document.createElement("div");
+            this.element.appendChild(this.pathContainer);
+            while (pathNode && pathNode.prev) {
+                this.pathContainer.appendChild(this.drawEdge(pathNode.node.pos, pathNode.prev.node.pos, 'path', 'map-' + pathNode.prevEdge.type));
+                pathNode = pathNode.prev;
+            }
+        };
+        Map.prototype.renderMark = function () {
+            this.markElem = this.addOrUpdateNodeElem(this.app.world.markNode, this.markElem);
+        };
+        Map.prototype.renderSource = function () {
+            this.sourceElem = this.addOrUpdateNodeElem(this.app.world.sourceNode, this.sourceElem);
+        };
+        Map.prototype.renderDestination = function () {
+            this.destElem = this.addOrUpdateNodeElem(this.app.world.destNode, this.destElem);
+        };
+        Map.prototype.addOrUpdateNodeElem = function (node, elem) {
+            if (elem)
+                elem.parentElement.removeChild(elem);
+            return node != null
+                ? this.element.appendChild(this.drawNode(node))
+                : null;
+        };
+        Map.prototype.renderGrid = function () {
+            if (!this.gridContainer) {
+                this.gridContainer = document.createElement("div");
+                this.element.appendChild(this.gridContainer);
+                for (var i = 0; i < 37; i++) {
+                    var el = document.createElement('div');
+                    el.classList.add("map-grid");
+                    el.classList.add("map-grid-v");
+                    el.style.left = (i * tesp.Cell.width + tesp.Cell.widthOffset) + "px";
+                    this.gridContainer.appendChild(el);
+                }
+                for (var i = 0; i < 42; i++) {
+                    var el = document.createElement('div');
+                    el.classList.add("map-grid");
+                    el.classList.add("map-grid-h");
+                    el.style.top = (i * tesp.Cell.height + tesp.Cell.heightOffset) + "px";
+                    this.gridContainer.appendChild(el);
+                }
+            }
+        };
+        Map.prototype.updateFeatures = function () {
+            var _this = this;
+            this.element.className = "";
+            this.app.world.features.forEach(function (f) {
+                if (f.hidden)
+                    _this.element.classList.add("hide-" + f.type);
+            });
+        };
+        Map.prototype.drawNode = function (node) {
+            var element = document.createElement("div");
+            element.classList.add("map-node");
+            element.classList.add("map-" + node.type);
+            element.style.left = node.pos.x + "px";
+            element.style.top = node.pos.y + "px";
+            element.dataset['nodeId'] = (node.referenceId || node.id) + '';
+            return element;
+        };
+        Map.prototype.drawEdge = function (n1, n2, type, subtype) {
+            var element = document.createElement("div");
+            element.classList.add("map-edge");
+            element.classList.add("map-" + type);
+            if (subtype)
+                element.classList.add(subtype);
+            var length = n1.distance(n2);
+            element.style.left = ((n1.x + n2.x) / 2) - (length / 2) + "px";
+            element.style.top = ((n1.y + n2.y) / 2) - 1 + "px";
+            element.style.width = length + "px";
+            element.style.transform = "rotate(" + Math.atan2(n1.y - n2.y, n1.x - n2.x) + "rad)";
+            return element;
+        };
+        return Map;
+    })();
+    tesp.Map = Map;
+})(tesp || (tesp = {}));
+var tesp;
+(function (tesp) {
     var Vec2 = (function () {
         function Vec2(x, y) {
             this.x = x;
@@ -28,10 +539,12 @@ var tesp;
     })();
     tesp.Cell = Cell;
     var Node = (function () {
-        function Node(name, longName, x, y, type) {
+        function Node(name, longName, x, y, type, permanent) {
+            if (permanent === void 0) { permanent = false; }
             this.name = name;
             this.longName = longName;
             this.type = type;
+            this.permanent = permanent;
             this.id = Node.identity++;
             this.pos = new Vec2(x, y);
             this.edges = [];
@@ -77,20 +590,15 @@ var tesp;
     })();
     tesp.Area = Area;
     (function (WorldUpdate) {
-        WorldUpdate[WorldUpdate["ContextChange"] = 0] = "ContextChange";
-        WorldUpdate[WorldUpdate["SourceChange"] = 1] = "SourceChange";
-        WorldUpdate[WorldUpdate["DestinationChange"] = 2] = "DestinationChange";
-        WorldUpdate[WorldUpdate["MarkChange"] = 3] = "MarkChange";
-        WorldUpdate[WorldUpdate["FeatureChange"] = 4] = "FeatureChange";
-        WorldUpdate[WorldUpdate["PathUpdate"] = 5] = "PathUpdate";
+        WorldUpdate[WorldUpdate["SourceChange"] = 0] = "SourceChange";
+        WorldUpdate[WorldUpdate["DestinationChange"] = 1] = "DestinationChange";
+        WorldUpdate[WorldUpdate["MarkChange"] = 2] = "MarkChange";
+        WorldUpdate[WorldUpdate["FeatureChange"] = 3] = "FeatureChange";
+        WorldUpdate[WorldUpdate["PathUpdate"] = 4] = "PathUpdate";
     })(tesp.WorldUpdate || (tesp.WorldUpdate = {}));
     var WorldUpdate = tesp.WorldUpdate;
     var Feature = (function () {
-        function Feature(name, type, icon, affectsPath) {
-            this.name = name;
-            this.type = type;
-            this.icon = icon;
-            this.affectsPath = affectsPath;
+        function Feature() {
         }
         return Feature;
     })();
@@ -113,24 +621,25 @@ var tesp;
     })();
     tesp.PathNode = PathNode;
     var World = (function () {
-        function World(data) {
+        function World(app, data) {
             var _this = this;
+            this.app = app;
             this.listeners = [];
             this.nodesById = {};
             this.features = [
-                new Feature("Recall", "mark", "bolt", true),
-                new Feature("Mages Guild", "mages-guild", "eye", true),
-                new Feature("Silt Strider", "silt-strider", "bug", true),
-                new Feature("Boat", "boat", "ship", true),
-                new Feature("Holamayan Boat", "holamayan", "ship", true),
-                new Feature("Propylon Chamber", "propylon", "cog", true),
-                new Feature("Vivec Gondola", "gondola", "ship", true),
-                new Feature("Divine Intervention", "divine", "bolt", true),
-                new Feature("Almsivi Intervention", "almsivi", "bolt", true),
-                new Feature("Transport lines", "edge", "", false),
-                new Feature("Locations", "node", "", false),
-                new Feature("Intervention area borders", "area", "", false),
-                new Feature("Gridlines", "grid", "", false)
+                { name: "Mark/Recall", verb: "Recall", type: "mark", icon: "bolt" },
+                { name: "Mages Guild", verb: "Guild Guide", type: "mages-guild", icon: "eye" },
+                { name: "Silt Strider", verb: "Silt Strider", type: "silt-strider", icon: "bug" },
+                { name: "Boat", location: "Docks", type: "boat", icon: "ship" },
+                { name: "Holamayan Boat", location: "Docks", verb: "Boat", type: "holamayan", icon: "ship" },
+                { name: "Propylon Chamber", type: "propylon", icon: "cog" },
+                { name: "Gondola", type: "gondola", icon: "ship" },
+                { name: "Divine Intervention", location: "Imperial Cult Shrine", type: "divine", icon: "bolt" },
+                { name: "Almsivi Intervention", location: "Tribunal Temple", type: "almsivi", icon: "bolt" },
+                { name: "Transport lines", type: "edge", visualOnly: true },
+                { name: "Locations", type: "node", visualOnly: true },
+                { name: "Intervention area border", type: "area", visualOnly: true },
+                { name: "Gridlines", type: "grid", visualOnly: true }
             ];
             var fIdx = this.features.byName = {};
             this.features.forEach(function (f) { return fIdx[f.type] = f; });
@@ -167,15 +676,18 @@ var tesp;
                     || reason === WorldUpdate.MarkChange
                     || reason === WorldUpdate.FeatureChange)
                     _this.findPath();
+                if (reason === WorldUpdate.MarkChange)
+                    _this.app.toggleClass("has-mark", _this.markNode != null);
             });
         }
         World.prototype.loadTransport = function (data, type) {
             var _this = this;
             var array = data[type];
-            var typeName = this.features.byName[type].name;
-            var nodes = array.map(function (n) { return new Node(n.name, n.name + " (" + typeName + ")", n.x, n.y, type); });
+            var feat = this.features.byName[type];
+            var typeName = feat.location || feat.name;
+            var nodes = array.map(function (n) { return new Node(n.name, typeName + ", " + n.name, n.x, n.y, type, true); });
             this.nodes = this.nodes.concat(nodes);
-            var cost = World.transportCost[type] || World.defaultTransportCost;
+            var cost = World.transportCost;
             array.forEach(function (n, i1) {
                 var n1 = nodes[i1];
                 if (n.edges) {
@@ -236,9 +748,9 @@ var tesp;
             var maxCost = this.sourceNode.pos.distance(this.destNode.pos);
             // explicit edges (services)
             nodes.forEach(function (n) {
-                return n.edges = n.node.edges.map(function (e) {
-                    return new PathEdge(nodeMap[(e.srcNode === n.node ? e.destNode : e.srcNode).id], e.cost, n.node.type);
-                });
+                return n.edges = n.node.edges
+                    .filter(function (e) { return !feats[e.srcNode.type].disabled; })
+                    .map(function (e) { return new PathEdge(nodeMap[(e.srcNode === n.node ? e.destNode : e.srcNode).id], e.cost, n.node.type); });
             });
             // implicit edges (walking)
             nodes.forEach(function (n) {
@@ -282,7 +794,8 @@ var tesp;
                             var cost = n.node.pos.distance(pos);
                             if (cost < maxCost) {
                                 // new node to allow us to teleport once we're in the area
-                                var name = a.target.name + " " + a.target.type + " area";
+                                var feat = _this.features.byName[a.target.type];
+                                var name = feat.name + " range of " + a.target.name;
                                 var an = new PathNode(new Node(name, name, pos.x, pos.y, "area"));
                                 an.edges = [new PathEdge(nodeMap[a.target.id], World.spellCost, a.target.type)];
                                 nodes.push(an);
@@ -310,417 +823,70 @@ var tesp;
             this.pathEnd = dest;
             this.trigger(WorldUpdate.PathUpdate);
         };
-        Object.defineProperty(World.prototype, "context", {
-            get: function () {
-                return this._context;
-            },
-            set: function (value) {
-                this._context = value;
-                this.trigger(WorldUpdate.ContextChange);
-            },
-            enumerable: true,
-            configurable: true
-        });
-        World.prototype.contextClick = function (x, y) {
-            if (!this.context)
-                return;
-            if (this.context === 'source') {
-                var name = this.getAreaName(x, y) || "You";
-                this.contextNode(new Node(name, name, x, y, "source"));
-            }
-            else if (this.context === 'destination') {
-                var name = this.getAreaName(x, y) || "Your destination";
-                this.contextNode(new Node(name, name, x, y, "destination"));
-            }
-            else if (this.context === 'mark') {
-                var region = this.getAreaName(x, y);
-                this.markNode = new Node("Mark", region ? "Mark in " + region : "Mark", x, y, "mark");
-                this.trigger(WorldUpdate.MarkChange);
-                this.context = null;
-            }
-        };
-        World.prototype.getAreaName = function (x, y) {
+        World.prototype.getRegionName = function (x, y) {
             var area;
             var cell = Cell.fromPosition(new Vec2(x, y));
-            return this.landmarks.some(function (r) { return r.containsCell(cell) && (area = r) != null; })
-                || this.regions.some(function (r) { return r.containsCell(cell) && (area = r) != null; })
+            return this.regions.some(function (r) { return r.containsCell(cell) && (area = r) != null; })
                 ? area.target.name
                 : null;
         };
-        World.prototype.contextNode = function (node) {
-            if (!this.context)
-                return;
-            if (this.context === 'source') {
+        World.prototype.getLandmarkName = function (x, y) {
+            var area;
+            var cell = Cell.fromPosition(new Vec2(x, y));
+            return this.landmarks.some(function (r) { return r.containsCell(cell) && (area = r) != null; })
+                ? area.target.name
+                : null;
+        };
+        World.prototype.setContextLocation = function (context, x, y) {
+            var areaName = this.getLandmarkName(x, y) || this.getRegionName(x, y);
+            if (context === 'source') {
+                var name = areaName || "You";
+                this.setContextNode(context, new Node(name, name, x, y, "source"));
+            }
+            else if (context === 'destination') {
+                var name = areaName || "Your destination";
+                this.setContextNode(context, new Node(name, name, x, y, "destination"));
+            }
+            else if (context === 'mark') {
+                var name = areaName ? "Mark in " + areaName : "Mark";
+                this.markNode = new Node(name, name, x, y, "mark");
+                this.trigger(WorldUpdate.MarkChange);
+            }
+        };
+        World.prototype.setContextNode = function (context, node) {
+            if (context === 'source') {
                 this.sourceNode = node;
-                this.context = null;
                 this.trigger(WorldUpdate.SourceChange);
             }
-            else if (this.context === 'destination') {
+            else if (context === 'destination') {
                 this.destNode = node;
-                this.context = null;
                 this.trigger(WorldUpdate.DestinationChange);
             }
-            else if (this.context === 'mark') {
+            else if (context === 'mark') {
                 var pos = node.pos;
                 this.markNode = new Node(node.name, node.longName, pos.x, pos.y, "mark");
                 this.markNode.referenceId = node.referenceId || node.id;
-                this.context = null;
                 this.trigger(WorldUpdate.MarkChange);
             }
         };
         World.prototype.clearContext = function (context) {
             if (context === 'source') {
                 this.sourceNode = null;
-                this.context = null;
                 this.trigger(WorldUpdate.SourceChange);
             }
             else if (context === 'destination') {
                 this.destNode = null;
-                this.context = null;
                 this.trigger(WorldUpdate.DestinationChange);
             }
             else if (context === 'mark') {
                 this.markNode = null;
-                this.context = null;
                 this.trigger(WorldUpdate.MarkChange);
             }
         };
-        World.defaultTransportCost = 10;
-        World.transportCost = { "mages-guild": 30 };
+        World.transportCost = 10;
         World.spellCost = 5;
         return World;
     })();
     tesp.World = World;
-})(tesp || (tesp = {}));
-/// <reference path="world.ts" />
-var tesp;
-(function (tesp) {
-    var Controls = (function () {
-        function Controls(world, element) {
-            var _this = this;
-            this.world = world;
-            this.element = element;
-            world.addListener(function (reason) {
-                if (reason === tesp.WorldUpdate.PathUpdate)
-                    _this.updatePath();
-                else if (reason === tesp.WorldUpdate.SourceChange)
-                    _this.updateNodeInfo('.control-source-info', _this.world.sourceNode);
-                else if (reason === tesp.WorldUpdate.DestinationChange)
-                    _this.updateNodeInfo('.control-destination-info', _this.world.destNode);
-                else if (reason === tesp.WorldUpdate.MarkChange)
-                    _this.updateNodeInfo('.control-mark-info', _this.world.markNode);
-            });
-            var nodeSearchIndex = {};
-            var searchInput = element.querySelector('.search-input');
-            var datalist = element.querySelector('#search-list');
-            this.world.nodes
-                .concat(this.world.landmarks.map(function (a) { return a.target; }))
-                .forEach(function (n) {
-                var opt = document.createElement("option");
-                var feat = _this.world.features.byName[n.type];
-                var value = feat ? n.name + " (" + _this.world.features.byName[n.type].name + ")" : n.name;
-                nodeSearchIndex[value] = n;
-                opt.value = value;
-                datalist.appendChild(opt);
-            });
-            for (var child = element.firstElementChild; child; child = child.nextElementSibling) {
-                var name = child.dataset['controlContainer'];
-                if (name === "path") {
-                    this.pathContainer = child;
-                }
-                else if (name === "features") {
-                    this.featuresContainer = child;
-                }
-            }
-            this.drawFeatures();
-            element.onclick = function (ev) {
-                if (ev.target instanceof HTMLButtonElement) {
-                    var data = ev.target.dataset;
-                    var cset = data['contextSet'];
-                    if (cset !== undefined) {
-                        _this.world.context = cset;
-                    }
-                    var cunset = data['contextUnset'];
-                    if (cunset !== undefined) {
-                        _this.world.clearContext(cunset);
-                    }
-                    var csearch = data['contextSearch'];
-                    if (csearch !== undefined) {
-                        var node = nodeSearchIndex[searchInput.value];
-                        if (node !== undefined) {
-                            _this.world.context = csearch;
-                            _this.world.contextNode(node);
-                            searchInput.value = "";
-                        }
-                    }
-                }
-            };
-        }
-        Controls.prototype.updateNodeInfo = function (selector, node) {
-            this.element.querySelector(selector).textContent = node != null ? node.longName : "";
-        };
-        Controls.prototype.updatePath = function () {
-            var child;
-            while (child = this.pathContainer.firstElementChild) {
-                this.pathContainer.removeChild(child);
-            }
-            var pathNode = this.world.pathEnd;
-            while (pathNode) {
-                this.pathContainer.insertBefore(this.drawPathNode(pathNode), this.pathContainer.firstElementChild);
-                pathNode = pathNode.prev;
-            }
-        };
-        Controls.prototype.drawPathNode = function (node) {
-            var el = document.createElement("div");
-            var icon, text;
-            var edge = node.prevEdge;
-            if (edge) {
-                var action;
-                if (edge.type === "walk") {
-                    action = "Walk";
-                    icon = "compass";
-                }
-                else {
-                    var feat = this.world.features.byName[edge.type];
-                    if (feat) {
-                        action = feat.name;
-                        icon = feat.icon;
-                    }
-                    else {
-                        action = edge.type;
-                        icon = "question";
-                    }
-                }
-                var loc = node.node.type == edge.type ? node.node.name : node.node.longName;
-                text = action + " to " + loc;
-            }
-            else {
-                icon = "map-marker";
-                text = node.node.longName;
-            }
-            var i = document.createElement("i");
-            i.classList.add("path-icon");
-            i.classList.add("fa");
-            i.classList.add("fa-" + icon);
-            el.appendChild(i);
-            el.appendChild(document.createTextNode(" " + text));
-            return el;
-        };
-        Controls.prototype.drawFeatures = function () {
-            var _this = this;
-            this.world.features.forEach(function (f) {
-                var el = document.createElement("div");
-                el.textContent = f.name + ":";
-                el.appendChild(_this.drawCheckbox(function (val) {
-                    f.hidden = !val;
-                    _this.world.trigger(tesp.WorldUpdate.FeatureChange);
-                }, !f.hidden));
-                if (f.affectsPath)
-                    el.appendChild(_this.drawCheckbox(function (val) {
-                        f.disabled = !val;
-                        _this.world.trigger(tesp.WorldUpdate.FeatureChange);
-                    }, !f.disabled));
-                _this.featuresContainer.appendChild(el);
-            });
-        };
-        Controls.prototype.drawCheckbox = function (onchange, initial) {
-            var input = document.createElement("input");
-            input.type = "checkbox";
-            input.onchange = function (ev) { return onchange(input.checked); };
-            input.checked = initial;
-            return input;
-        };
-        return Controls;
-    })();
-    tesp.Controls = Controls;
-})(tesp || (tesp = {}));
-/// <reference path="world.ts" />
-var tesp;
-(function (tesp) {
-    var Map = (function () {
-        function Map(world, element) {
-            var _this = this;
-            this.world = world;
-            this.element = element;
-            world.addListener(function (reason) {
-                if (reason === tesp.WorldUpdate.PathUpdate)
-                    _this.renderPath();
-                else if (reason === tesp.WorldUpdate.SourceChange)
-                    _this.renderSource();
-                else if (reason === tesp.WorldUpdate.DestinationChange)
-                    _this.renderDestination();
-                else if (reason === tesp.WorldUpdate.MarkChange)
-                    _this.renderMark();
-                else if (reason === tesp.WorldUpdate.FeatureChange)
-                    _this.updateFeatures();
-            });
-            element.onclick = function (ev) {
-                if (!_this.world.context)
-                    return;
-                var target = ev.target;
-                var node = null;
-                if (target.classList.contains('map-node')) {
-                    var id = target.dataset['nodeId'];
-                    if (id !== undefined) {
-                        node = _this.world.findNodeById(+id);
-                    }
-                }
-                if (node != null)
-                    _this.world.contextNode(node);
-                else
-                    _this.world.contextClick(ev.pageX, ev.pageY);
-            };
-            this.renderNodes();
-            this.renderPath();
-            this.renderMark();
-            this.renderGrid();
-            this.updateFeatures();
-        }
-        Map.prototype.renderNodes = function () {
-            var _this = this;
-            if (this.nodeContainer != null)
-                this.nodeContainer.parentElement.removeChild(this.nodeContainer);
-            this.nodeContainer = document.createElement("div");
-            this.element.appendChild(this.nodeContainer);
-            this.world.nodes
-                .forEach(function (n) { return _this.nodeContainer.appendChild(_this.drawNode(n)); });
-            if (this.edgeContainer != null)
-                this.edgeContainer.parentElement.removeChild(this.edgeContainer);
-            this.edgeContainer = document.createElement("div");
-            this.element.appendChild(this.edgeContainer);
-            this.world.edges.forEach(function (e) {
-                return _this.edgeContainer.appendChild(_this.drawEdge(e.srcNode.pos, e.destNode.pos, e.srcNode.type, "map-transport-edge"));
-            });
-            if (this.areaContainer != null)
-                this.areaContainer.parentElement.removeChild(this.areaContainer);
-            this.areaContainer = document.createElement("div");
-            this.element.appendChild(this.areaContainer);
-            this.world.areas
-                .forEach(function (a) {
-                var type = a.target.type;
-                var prev = null;
-                for (var i = 0; i < a.rows.length; i++) {
-                    var row = a.rows[i];
-                    if (prev != null) {
-                        if (row.x1 !== prev.x1) {
-                            _this.areaContainer.appendChild(_this.drawCellEdge(row.x1, row.y, prev.x1, row.y, type));
-                        }
-                        if (row.x2 !== prev.x2) {
-                            _this.areaContainer.appendChild(_this.drawCellEdge(row.x2 + 1, row.y, prev.x2 + 1, row.y, type));
-                        }
-                    }
-                    else {
-                        _this.areaContainer.appendChild(_this.drawCellEdge(row.x1, row.y, row.x2 + 1, row.y, type));
-                    }
-                    _this.areaContainer.appendChild(_this.drawCellEdge(row.x1, row.y, row.x1, row.y + 1, type));
-                    _this.areaContainer.appendChild(_this.drawCellEdge(row.x2 + 1, row.y, row.x2 + 1, row.y + 1, type));
-                    prev = row;
-                }
-                _this.areaContainer.appendChild(_this.drawCellEdge(prev.x1, prev.y + 1, prev.x2 + 1, prev.y + 1, type));
-            });
-        };
-        Map.prototype.drawCellEdge = function (x1, y1, x2, y2, type) {
-            return this.drawEdge(tesp.Vec2.fromCell(x1, y1), tesp.Vec2.fromCell(x2, y2), type, "map-area");
-        };
-        Map.prototype.renderPath = function () {
-            if (this.pathContainer != null)
-                this.pathContainer.parentElement.removeChild(this.pathContainer);
-            var pathNode = this.world.pathEnd;
-            if (pathNode == null) {
-                this.pathContainer = null;
-                return;
-            }
-            this.pathContainer = document.createElement("div");
-            this.element.appendChild(this.pathContainer);
-            while (pathNode && pathNode.prev) {
-                this.pathContainer.appendChild(this.drawEdge(pathNode.node.pos, pathNode.prev.node.pos, 'path', 'map-' + pathNode.prevEdge.type));
-                pathNode = pathNode.prev;
-            }
-        };
-        Map.prototype.renderMark = function () {
-            this.markElem = this.addOrUpdateNodeElem(this.world.markNode, this.markElem);
-        };
-        Map.prototype.renderSource = function () {
-            this.sourceElem = this.addOrUpdateNodeElem(this.world.sourceNode, this.sourceElem);
-        };
-        Map.prototype.renderDestination = function () {
-            this.destElem = this.addOrUpdateNodeElem(this.world.destNode, this.destElem);
-        };
-        Map.prototype.addOrUpdateNodeElem = function (node, elem) {
-            if (elem)
-                elem.parentElement.removeChild(elem);
-            return node != null
-                ? this.element.appendChild(this.drawNode(node))
-                : null;
-        };
-        Map.prototype.renderGrid = function () {
-            if (!this.gridContainer) {
-                this.gridContainer = document.createElement("div");
-                this.element.appendChild(this.gridContainer);
-                for (var i = 0; i < 37; i++) {
-                    var el = document.createElement('div');
-                    el.classList.add("map-grid");
-                    el.classList.add("map-grid-v");
-                    el.style.left = (i * tesp.Cell.width + tesp.Cell.widthOffset) + "px";
-                    this.gridContainer.appendChild(el);
-                }
-                for (var i = 0; i < 42; i++) {
-                    var el = document.createElement('div');
-                    el.classList.add("map-grid");
-                    el.classList.add("map-grid-h");
-                    el.style.top = (i * tesp.Cell.height + tesp.Cell.heightOffset) + "px";
-                    this.gridContainer.appendChild(el);
-                }
-            }
-        };
-        Map.prototype.updateFeatures = function () {
-            var _this = this;
-            this.element.className = "";
-            this.world.features.forEach(function (f) {
-                if (f.hidden)
-                    _this.element.classList.add("hide-" + f.type);
-            });
-        };
-        Map.prototype.drawNode = function (node) {
-            var element = document.createElement("div");
-            element.classList.add("map-node");
-            element.classList.add("map-" + node.type);
-            element.title = node.longName;
-            element.style.left = node.pos.x + "px";
-            element.style.top = node.pos.y + "px";
-            element.dataset['nodeId'] = (node.referenceId || node.id) + '';
-            return element;
-        };
-        Map.prototype.drawEdge = function (n1, n2, type, subtype) {
-            var element = document.createElement("div");
-            element.classList.add("map-edge");
-            element.classList.add("map-" + type);
-            if (subtype)
-                element.classList.add(subtype);
-            var length = n1.distance(n2);
-            element.style.left = ((n1.x + n2.x) / 2) - (length / 2) + "px";
-            element.style.top = ((n1.y + n2.y) / 2) - 1 + "px";
-            element.style.width = length + "px";
-            element.style.transform = "rotate(" + Math.atan2(n1.y - n2.y, n1.x - n2.x) + "rad)";
-            return element;
-        };
-        return Map;
-    })();
-    tesp.Map = Map;
-})(tesp || (tesp = {}));
-/// <reference path="d/whatwg-fetch/whatwg-fetch.d.ts" />
-/// <reference path="world.ts" />
-/// <reference path="controls.ts" />
-/// <reference path="map.ts" />
-var tesp;
-(function (tesp) {
-    window.fetch("data/data.json").then(function (res) {
-        return res.json().then(function (data) {
-            var world = new tesp.World(data);
-            new tesp.Map(world, document.getElementById("map"));
-            new tesp.Controls(world, document.getElementById("controls"));
-            document.body.classList.remove("loading");
-        });
-    });
 })(tesp || (tesp = {}));
 //# sourceMappingURL=all.js.map

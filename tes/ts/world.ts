@@ -28,7 +28,7 @@
         referenceId: number;
 
         private static identity: number = 1;
-        constructor(public name: string, public longName: string, x: number, y: number, public type: string) {
+        constructor(public name: string, public longName: string, x: number, y: number, public type: string, public permanent: boolean = false) {
             this.id = Node.identity++;
             this.pos = new Vec2(x, y);
             this.edges = [];
@@ -65,13 +65,17 @@
     }
 
     export interface WorldListener { (reason: WorldUpdate): void; }
-    export enum WorldUpdate { ContextChange, SourceChange, DestinationChange, MarkChange, FeatureChange, PathUpdate }
+    export enum WorldUpdate { SourceChange, DestinationChange, MarkChange, FeatureChange, PathUpdate }
 
     export class Feature {
+        name: string;
+        verb: string;
+        location: string;
+        type: string;
+        icon: string;
         disabled: boolean;
         hidden: boolean;
-
-        constructor(public name: string, public type: string, public icon: string, public affectsPath: boolean) { }
+        visualOnly: boolean;
     }
     export interface FeatureList extends Array<Feature> {
         byName: {[key:string]:Feature};
@@ -103,28 +107,27 @@
         pathEnd: PathNode;
         features: FeatureList;
 
-        private static defaultTransportCost: number = 10;
-        private static transportCost: { [key: string]: number } = { "mages-guild": 30 };
+        private static transportCost: number = 10;
         private static spellCost: number = 5;
 
         private listeners: WorldListener[] = [];
         private nodesById: { [key: number]: Node } = {};
 
-        constructor(data: any) {
+        constructor(private app: Application, data: any) {
             this.features = <FeatureList>[
-                new Feature("Recall", "mark", "bolt", true),
-                new Feature("Mages Guild", "mages-guild", "eye", true),
-                new Feature("Silt Strider", "silt-strider", "bug", true),
-                new Feature("Boat", "boat", "ship", true),
-                new Feature("Holamayan Boat", "holamayan", "ship", true),
-                new Feature("Propylon Chamber", "propylon", "cog", true),
-                new Feature("Vivec Gondola", "gondola", "ship", true),
-                new Feature("Divine Intervention", "divine", "bolt", true),
-                new Feature("Almsivi Intervention", "almsivi", "bolt", true),
-                new Feature("Transport lines", "edge", "", false),
-                new Feature("Locations", "node", "", false),
-                new Feature("Intervention area borders", "area", "", false),
-                new Feature("Gridlines", "grid", "", false)
+                { name: "Mark/Recall", verb: "Recall", type: "mark", icon: "bolt" },
+                { name: "Mages Guild", verb: "Guild Guide", type: "mages-guild", icon: "eye" },
+                { name: "Silt Strider", verb: "Silt Strider", type: "silt-strider", icon: "bug" },
+                { name: "Boat", location: "Docks", type: "boat", icon: "ship" },
+                { name: "Holamayan Boat", location: "Docks", verb: "Boat",  type: "holamayan", icon: "ship" },
+                { name: "Propylon Chamber", type: "propylon", icon: "cog" },
+                { name: "Gondola", type: "gondola", icon: "ship" },
+                { name: "Divine Intervention", location: "Imperial Cult Shrine", type: "divine", icon: "bolt" },
+                { name: "Almsivi Intervention", location: "Tribunal Temple", type: "almsivi", icon: "bolt" },
+                { name: "Transport lines", type: "edge", visualOnly: true },
+                { name: "Locations", type: "node", visualOnly: true },
+                { name: "Intervention area border", type: "area", visualOnly: true },
+                { name: "Gridlines", type: "grid", visualOnly: true }
             ];
             var fIdx: { [key: string]: Feature } = this.features.byName = {};
             this.features.forEach(f => fIdx[f.type] = f);
@@ -165,15 +168,18 @@
                     || reason === WorldUpdate.MarkChange
                     || reason === WorldUpdate.FeatureChange)
                     this.findPath();
+                if (reason === WorldUpdate.MarkChange)
+                    this.app.toggleClass("has-mark", this.markNode != null);
             });
         }
 
         loadTransport(data: any, type: string) {
             var array: any[] = data[type];
-            var typeName = this.features.byName[type].name;
-            var nodes: Node[] = array.map(n => new Node(n.name, `${n.name} (${typeName})`, n.x, n.y, type));
+            var feat = this.features.byName[type];
+            var typeName = feat.location || feat.name;
+            var nodes: Node[] = array.map(n => new Node(n.name, `${typeName}, ${n.name}`, n.x, n.y, type, true));
             this.nodes = this.nodes.concat(nodes);
-            var cost = World.transportCost[type] || World.defaultTransportCost;
+            var cost = World.transportCost;
             array.forEach((n, i1) => {
                 var n1 = nodes[i1];
                 if (n.edges) {
@@ -242,8 +248,9 @@
 
             // explicit edges (services)
             nodes.forEach(n =>
-                n.edges = n.node.edges.map(e =>
-                    new PathEdge(nodeMap[(e.srcNode === n.node ? e.destNode : e.srcNode).id], e.cost, n.node.type)));
+                n.edges = n.node.edges
+                    .filter(e => !feats[e.srcNode.type].disabled)
+                    .map(e => new PathEdge(nodeMap[(e.srcNode === n.node ? e.destNode : e.srcNode).id], e.cost, n.node.type)));
 
             // implicit edges (walking)
             nodes.forEach(n =>
@@ -289,7 +296,8 @@
                             var cost = n.node.pos.distance(pos);
                             if (cost < maxCost) {
                                 // new node to allow us to teleport once we're in the area
-                                var name = `${a.target.name} ${a.target.type} area`;
+                                var feat = this.features.byName[a.target.type];
+                                var name = `${feat.name} range of ${a.target.name}`;
                                 var an = new PathNode(new Node(name, name, pos.x, pos.y, "area"));
                                 an.edges = [new PathEdge(nodeMap[a.target.id], World.spellCost, a.target.type)];
                                 nodes.push(an);
@@ -322,74 +330,58 @@
             this.trigger(WorldUpdate.PathUpdate);
         }
 
-        private _context: string;
-        get context(): string {
-            return this._context;
+        getRegionName(x: number, y: number): string {
+            var area: Area;
+            var cell = Cell.fromPosition(new Vec2(x, y));
+            return this.regions.some(r => r.containsCell(cell) && (area = r) != null)
+                ? area.target.name
+                : null;
         }
-        set context(value: string) {
-            this._context = value;
-            this.trigger(WorldUpdate.ContextChange);
-        }
-
-        contextClick(x: number, y: number) {
-            if (!this.context)
-                return;
-
-            if (this.context === 'source') {
-                var name = this.getAreaName(x, y) || "You";
-                this.contextNode(new Node(name, name, x, y, "source"));
-            } else if (this.context === 'destination') {
-                var name = this.getAreaName(x, y) || "Your destination";
-                this.contextNode(new Node(name, name, x, y, "destination"));
-            } else if (this.context === 'mark') {
-                var region = this.getAreaName(x, y);
-                this.markNode = new Node("Mark", region ? `Mark in ${region}` : "Mark", x, y, "mark");
-                this.trigger(WorldUpdate.MarkChange);
-                this.context = null;
-            }
-        }
-        private getAreaName(x: number, y: number) {
+        getLandmarkName(x: number, y: number): string {
             var area: Area;
             var cell = Cell.fromPosition(new Vec2(x, y));
             return this.landmarks.some(r => r.containsCell(cell) && (area = r) != null)
-                || this.regions.some(r => r.containsCell(cell) && (area = r) != null)
                 ? area.target.name
                 : null;
         }
 
-        contextNode(node: Node) {
-            if (!this.context)
-                return;
-
-            if (this.context === 'source') {
-                this.sourceNode = node;
-                this.context = null;
-                this.trigger(WorldUpdate.SourceChange);
-            } else if (this.context === 'destination') {
-                this.destNode = node;
-                this.context = null;
-                this.trigger(WorldUpdate.DestinationChange);
-            } else if (this.context === 'mark') {
-                var pos = node.pos;
-                this.markNode = new Node(node.name, node.longName, pos.x, pos.y, "mark");
-                this.markNode.referenceId = node.referenceId || node.id;
-                this.context = null;
+        setContextLocation(context: string, x: number, y: number) {
+            var areaName = this.getLandmarkName(x, y) || this.getRegionName(x, y);
+            if (context === 'source') {
+                var name = areaName || "You";
+                this.setContextNode(context, new Node(name, name, x, y, "source"));
+            } else if (context === 'destination') {
+                var name = areaName || "Your destination";
+                this.setContextNode(context, new Node(name, name, x, y, "destination"));
+            } else if (context === 'mark') {
+                var name = areaName ? `Mark in ${areaName}` : "Mark";
+                this.markNode = new Node(name, name, x, y, "mark");
                 this.trigger(WorldUpdate.MarkChange);
             }
         }
-
+        setContextNode(context: string, node: Node) {
+            if (context === 'source') {
+                this.sourceNode = node;
+                this.trigger(WorldUpdate.SourceChange);
+            } else if (context === 'destination') {
+                this.destNode = node;
+                this.trigger(WorldUpdate.DestinationChange);
+            } else if (context === 'mark') {
+                var pos = node.pos;
+                this.markNode = new Node(node.name, node.longName, pos.x, pos.y, "mark");
+                this.markNode.referenceId = node.referenceId || node.id;
+                this.trigger(WorldUpdate.MarkChange);
+            }
+        }
         clearContext(context: string) {
             if (context === 'source') {
                 this.sourceNode = null;
-                this.context = null;
                 this.trigger(WorldUpdate.SourceChange);
             } else if (context === 'destination') {
                 this.destNode = null;
-                this.context = null;
                 this.trigger(WorldUpdate.DestinationChange);
             } else if (context === 'mark') {
                 this.markNode = null;
-                this.context = null;
                 this.trigger(WorldUpdate.MarkChange);
             }
         }
