@@ -8,6 +8,7 @@ var Tesp;
         ChangeReason[ChangeReason["PathUpdate"] = 4] = "PathUpdate";
     })(Tesp.ChangeReason || (Tesp.ChangeReason = {}));
     var ChangeReason = Tesp.ChangeReason;
+    /** Core TESPathfinder application */
     var Application = (function () {
         function Application() {
             var _this = this;
@@ -21,17 +22,24 @@ var Tesp;
                 _this.map = new Tesp.Map(_this, document.getElementById("map"));
                 _this.controls = new Tesp.Controls(_this, document.getElementById("controls"));
                 _this.menu = new Tesp.ContextMenu(_this, document.getElementById("context-menu"));
-                document.body.onmousedown = document.body.oncontextmenu = function () { return _this.menu.hide(); };
+                document.body.onmousedown = document.body.oncontextmenu = function () {
+                    // TODO: refactor into their respective classes
+                    _this.menu.hide();
+                    _this.controls.clearSearch();
+                };
                 _this.toggleBodyClass("loading", false);
                 return _this;
             });
         }
+        /** Listen for application level changes */
         Application.prototype.addChangeListener = function (listener) {
             this.listeners.push(listener);
         };
+        /** Inform all listeners about a new change */
         Application.prototype.triggerChange = function (reason) {
             this.listeners.forEach(function (fn) { return fn(reason); });
         };
+        /** Toggle a class attribute name in the document body */
         Application.prototype.toggleBodyClass = function (name, enabled) {
             if (enabled) {
                 document.body.classList.add(name);
@@ -43,24 +51,29 @@ var Tesp;
         return Application;
     })();
     Tesp.Application = Application;
+    /** The current instance of the application, for debugging purposes only */
     Tesp.app = new Application();
 })(Tesp || (Tesp = {}));
 var Tesp;
 (function (Tesp) {
+    /** 2-dimensional floating point vector */
     var Vec2 = (function () {
         function Vec2(x, y) {
             this.x = x;
             this.y = y;
         }
+        /** Calculate the euclidean distance between this vector and another */
         Vec2.prototype.distance = function (other) {
             return Math.sqrt(((other.x - this.x) * (other.x - this.x)) + ((other.y - this.y) * (other.y - this.y)));
         };
+        /** Calculate the top-left corner of a cell as a position vector */
         Vec2.fromCell = function (x, y) {
             return new Vec2(x * Cell.width + Cell.widthOffset, y * Cell.height + Cell.heightOffset);
         };
         return Vec2;
     })();
     Tesp.Vec2 = Vec2;
+    /** A single significant point in the world */
     var Node = (function () {
         function Node(name, longName, pos, type, permanent) {
             if (permanent === void 0) { permanent = false; }
@@ -76,6 +89,7 @@ var Tesp;
         return Node;
     })();
     Tesp.Node = Node;
+    /** A link between two nodes */
     var Edge = (function () {
         function Edge(srcNode, destNode, cost) {
             this.srcNode = srcNode;
@@ -85,6 +99,7 @@ var Tesp;
         return Edge;
     })();
     Tesp.Edge = Edge;
+    /** A large area in the world */
     var Cell = (function () {
         function Cell() {
         }
@@ -98,6 +113,7 @@ var Tesp;
         return Cell;
     })();
     Tesp.Cell = Cell;
+    /** A single row of cells */
     var CellRow = (function () {
         function CellRow(y, x1, x2) {
             this.y = y;
@@ -108,6 +124,7 @@ var Tesp;
         return CellRow;
     })();
     Tesp.CellRow = CellRow;
+    /** An area of one or more cells */
     var Area = (function () {
         function Area(target, rows) {
             this.target = target;
@@ -115,6 +132,7 @@ var Tesp;
             this.minY = rows[0].y;
             this.maxY = rows[rows.length - 1].y;
         }
+        /** Check if this cell contains the supplied coordinates */
         Area.prototype.containsCell = function (pos) {
             if (pos.y >= this.minY && pos.y < this.maxY + 1) {
                 var row = this.rows[Math.floor(pos.y) - this.minY];
@@ -128,6 +146,7 @@ var Tesp;
 })(Tesp || (Tesp = {}));
 var Tesp;
 (function (Tesp) {
+    /** The current mutable state of the application */
     var Context = (function () {
         function Context(app) {
             var _this = this;
@@ -201,6 +220,7 @@ var Tesp;
 })(Tesp || (Tesp = {}));
 var Tesp;
 (function (Tesp) {
+    /** Manages the context menu of the map */
     var ContextMenu = (function () {
         function ContextMenu(app, element) {
             var _this = this;
@@ -281,6 +301,7 @@ var Tesp;
             }
             lines.forEach(function (l) {
                 var item = document.createElement("li");
+                item.className = "link";
                 item.textContent = l;
                 _this.element.insertBefore(item, separator);
             });
@@ -328,6 +349,7 @@ var Tesp;
 })(Tesp || (Tesp = {}));
 var Tesp;
 (function (Tesp) {
+    /** UI controls for search and navigation */
     var Controls = (function () {
         function Controls(app, element) {
             var _this = this;
@@ -346,33 +368,84 @@ var Tesp;
             this.pathContainer = element.querySelector(".path-container");
             this.featuresContainer = element.querySelector(".features-container");
             this.searchInput = element.querySelector(".search-input");
+            this.searchBox = element.querySelector(".search-results");
             var featuresVisible = false;
             element.querySelector(".settings-icon").onclick = function () {
                 return _this.featuresContainer.style.display = (featuresVisible = !featuresVisible) ? "block" : "none";
             };
-            var nodeSearchIndex = {};
-            var datalist = element.querySelector("#search-list");
-            this.app.world.nodes
+            function prepTerm(text) {
+                return text != null ? text.toLowerCase().replace(/[^a-z]+/g, " ") : null;
+            }
+            var searchNodes = this.app.world.nodes
                 .concat(this.app.world.landmarks.map(function (a) { return a.target; }))
-                .forEach(function (n) {
-                var opt = document.createElement("option");
+                .map(function (n) {
                 var feat = _this.app.features.byName[n.type];
-                var value = feat ? n.name + " (" + (feat.location || feat.name) + ")" : n.name;
-                nodeSearchIndex[value] = n;
-                opt.value = value;
-                datalist.appendChild(opt);
-            });
+                var featName = feat != null ? feat.location || feat.name : null;
+                return {
+                    name: prepTerm(n.name),
+                    location: prepTerm(featName),
+                    node: n,
+                    feature: featName
+                };
+            })
+                .sort(function (a, b) { return a.name.localeCompare(b.name); })
+                .sort(function (a, b) { return (a.location || "").localeCompare(b.location || ""); });
             this.drawFeatures();
             this.searchInput.oninput = function () {
-                var node = nodeSearchIndex[_this.searchInput.value];
-                if (node !== undefined) {
-                    _this.app.menu.openNode(node);
+                var child;
+                while ((child = _this.searchBox.firstElementChild) != null) {
+                    _this.searchBox.removeChild(child);
                 }
-                else {
-                    _this.app.menu.hide();
+                var search = _this.searchInput.value.toLowerCase();
+                var starts = [];
+                var terms = [];
+                var alpha = false;
+                for (var i = 0; i < search.length; i++) {
+                    var c = search.charCodeAt(i);
+                    if (c > 96 && c < 123) {
+                        if (!alpha) {
+                            starts.push(i);
+                            alpha = true;
+                        }
+                    }
+                    else if (alpha) {
+                        terms = terms.concat(starts.map(function (s) { return search.substring(s, i); }));
+                        alpha = false;
+                    }
                 }
+                if (alpha) {
+                    terms = terms.concat(starts.map(function (s) { return search.substring(s); }));
+                }
+                var results = searchNodes
+                    .filter(function (n) {
+                    var c = 0;
+                    return terms.some(function (t) {
+                        if (n.name.indexOf(t) === 0 || n.location != null && n.location.indexOf(t) === 0)
+                            c++;
+                        return c >= starts.length;
+                    });
+                });
+                _this.searchBox.style.display = results.length > 0 ? "inherit" : "none";
+                results.forEach(function (n) {
+                    var item = document.createElement("li");
+                    item.className = "link";
+                    item.textContent = n.feature ? n.node.name + ", " + n.feature : n.node.name;
+                    item.onclick = function () {
+                        _this.app.menu.openNode(n.node);
+                        _this.clearSearch();
+                    };
+                    item.onmousedown = function (ev) { return ev.stopPropagation(); };
+                    _this.searchBox.appendChild(item);
+                });
+                var input = _this.searchInput.getBoundingClientRect();
+                _this.searchBox.style.top = (input.top + input.height) + "px";
+                _this.searchBox.style.left = input.left + "px";
             };
         }
+        Controls.prototype.clearSearch = function () {
+            this.searchInput.value = "";
+            this.searchBox.style.display = "none";
+        };
         Controls.prototype.updateNodeInfo = function (selector, node) {
             var _this = this;
             var el = this.element.querySelector(selector);
@@ -507,6 +580,7 @@ var Tesp;
 })(Tesp || (Tesp = {}));
 var Tesp;
 (function (Tesp) {
+    /** The map UI */
     var Map = (function () {
         function Map(app, element) {
             var _this = this;
@@ -853,6 +927,7 @@ var Tesp;
 })(Tesp || (Tesp = {}));
 var Tesp;
 (function (Tesp) {
+    /** Static assets and locations */
     var World = (function () {
         function World(app, data) {
             var _this = this;
