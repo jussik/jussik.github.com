@@ -1,21 +1,38 @@
-var tesp;
-(function (tesp) {
+var Tesp;
+(function (Tesp) {
+    (function (ChangeReason) {
+        ChangeReason[ChangeReason["SourceChange"] = 0] = "SourceChange";
+        ChangeReason[ChangeReason["DestinationChange"] = 1] = "DestinationChange";
+        ChangeReason[ChangeReason["MarkChange"] = 2] = "MarkChange";
+        ChangeReason[ChangeReason["FeatureChange"] = 3] = "FeatureChange";
+        ChangeReason[ChangeReason["PathUpdate"] = 4] = "PathUpdate";
+    })(Tesp.ChangeReason || (Tesp.ChangeReason = {}));
+    var ChangeReason = Tesp.ChangeReason;
     var Application = (function () {
         function Application() {
             var _this = this;
+            this.listeners = [];
             this.loaded = window.fetch("data/data.json")
                 .then(function (res) { return res.json(); })
                 .then(function (data) {
-                _this.world = new tesp.World(_this, data);
-                _this.map = new tesp.Map(_this, document.getElementById("map"));
-                _this.controls = new tesp.Controls(_this, document.getElementById("controls"));
-                _this.menu = new tesp.ContextMenu(_this, document.getElementById("context-menu"));
-                document.body.onmousedown = document.body.oncontextmenu = function (ev) { return _this.menu.hide(); };
-                _this.toggleClass("loading", false);
+                _this.context = new Tesp.Context(_this);
+                _this.features = Tesp.Features.init();
+                _this.world = new Tesp.World(_this, data);
+                _this.map = new Tesp.Map(_this, document.getElementById("map"));
+                _this.controls = new Tesp.Controls(_this, document.getElementById("controls"));
+                _this.menu = new Tesp.ContextMenu(_this, document.getElementById("context-menu"));
+                document.body.onmousedown = document.body.oncontextmenu = function () { return _this.menu.hide(); };
+                _this.toggleBodyClass("loading", false);
                 return _this;
             });
         }
-        Application.prototype.toggleClass = function (name, enabled) {
+        Application.prototype.addChangeListener = function (listener) {
+            this.listeners.push(listener);
+        };
+        Application.prototype.triggerChange = function (reason) {
+            this.listeners.forEach(function (fn) { return fn(reason); });
+        };
+        Application.prototype.toggleBodyClass = function (name, enabled) {
             if (enabled) {
                 document.body.classList.add(name);
             }
@@ -25,37 +42,192 @@ var tesp;
         };
         return Application;
     })();
-    tesp.Application = Application;
-    tesp.app = new Application();
-})(tesp || (tesp = {}));
-var tesp;
-(function (tesp) {
+    Tesp.Application = Application;
+    Tesp.app = new Application();
+})(Tesp || (Tesp = {}));
+var Tesp;
+(function (Tesp) {
+    var Vec2 = (function () {
+        function Vec2(x, y) {
+            this.x = x;
+            this.y = y;
+        }
+        Vec2.prototype.distance = function (other) {
+            return Math.sqrt(((other.x - this.x) * (other.x - this.x)) + ((other.y - this.y) * (other.y - this.y)));
+        };
+        Vec2.fromCell = function (x, y) {
+            return new Vec2(x * Cell.width + Cell.widthOffset, y * Cell.height + Cell.heightOffset);
+        };
+        return Vec2;
+    })();
+    Tesp.Vec2 = Vec2;
+    var Node = (function () {
+        function Node(name, longName, pos, type, permanent) {
+            if (permanent === void 0) { permanent = false; }
+            this.name = name;
+            this.longName = longName;
+            this.pos = pos;
+            this.type = type;
+            this.permanent = permanent;
+            this.id = Node.identity++;
+            this.edges = [];
+        }
+        Node.identity = 1;
+        return Node;
+    })();
+    Tesp.Node = Node;
+    var Edge = (function () {
+        function Edge(srcNode, destNode, cost) {
+            this.srcNode = srcNode;
+            this.destNode = destNode;
+            this.cost = cost;
+        }
+        return Edge;
+    })();
+    Tesp.Edge = Edge;
+    var Cell = (function () {
+        function Cell() {
+        }
+        Cell.fromPosition = function (pos) {
+            return new Vec2((pos.x - Cell.widthOffset) / Cell.width, (pos.y - Cell.heightOffset) / Cell.height);
+        };
+        Cell.width = 44.5;
+        Cell.height = 44.6;
+        Cell.widthOffset = 20;
+        Cell.heightOffset = 35;
+        return Cell;
+    })();
+    Tesp.Cell = Cell;
+    var CellRow = (function () {
+        function CellRow(y, x1, x2) {
+            this.y = y;
+            this.x1 = x1;
+            this.x2 = x2;
+            this.width = x2 - x1 + 1;
+        }
+        return CellRow;
+    })();
+    Tesp.CellRow = CellRow;
+    var Area = (function () {
+        function Area(target, rows) {
+            this.target = target;
+            this.rows = rows;
+            this.minY = rows[0].y;
+            this.maxY = rows[rows.length - 1].y;
+        }
+        Area.prototype.containsCell = function (pos) {
+            if (pos.y >= this.minY && pos.y < this.maxY + 1) {
+                var row = this.rows[Math.floor(pos.y) - this.minY];
+                return pos.x >= row.x1 && pos.x < row.x2 + 1;
+            }
+            return false;
+        };
+        return Area;
+    })();
+    Tesp.Area = Area;
+})(Tesp || (Tesp = {}));
+var Tesp;
+(function (Tesp) {
+    var Context = (function () {
+        function Context(app) {
+            var _this = this;
+            this.app = app;
+            this.app.addChangeListener(function (reason) {
+                if (reason === Tesp.ChangeReason.SourceChange
+                    || reason === Tesp.ChangeReason.DestinationChange
+                    || reason === Tesp.ChangeReason.FeatureChange) {
+                    _this.findPath();
+                }
+                if (reason === Tesp.ChangeReason.MarkChange) {
+                    _this.findPath();
+                    _this.app.toggleBodyClass("has-mark", _this.markNode != null);
+                }
+            });
+        }
+        Context.prototype.setContextLocation = function (context, pos) {
+            var name = this.app.world.getLandmarkName(pos) || this.app.world.getRegionName(pos);
+            if (context === "source") {
+                name = name || "You";
+                this.setContextNode(context, new Tesp.Node(name, name, pos, "source"));
+            }
+            else if (context === "destination") {
+                name = name || "Your destination";
+                this.setContextNode(context, new Tesp.Node(name, name, pos, "destination"));
+            }
+            else if (context === "mark") {
+                this.markNode = new Tesp.Node(name, name, pos, "mark");
+                this.app.triggerChange(Tesp.ChangeReason.MarkChange);
+            }
+        };
+        Context.prototype.setContextNode = function (context, node) {
+            if (context === "source") {
+                this.sourceNode = node;
+                this.app.triggerChange(Tesp.ChangeReason.SourceChange);
+            }
+            else if (context === "destination") {
+                this.destNode = node;
+                this.app.triggerChange(Tesp.ChangeReason.DestinationChange);
+            }
+            else if (context === "mark") {
+                var pos = node.pos;
+                this.markNode = new Tesp.Node(node.longName, node.longName, pos, "mark");
+                this.markNode.referenceId = node.referenceId || node.id;
+                this.app.triggerChange(Tesp.ChangeReason.MarkChange);
+            }
+        };
+        Context.prototype.clearContext = function (context) {
+            if (context === "source") {
+                this.sourceNode = null;
+                this.app.triggerChange(Tesp.ChangeReason.SourceChange);
+            }
+            else if (context === "destination") {
+                this.destNode = null;
+                this.app.triggerChange(Tesp.ChangeReason.DestinationChange);
+            }
+            else if (context === "mark") {
+                this.markNode = null;
+                this.app.triggerChange(Tesp.ChangeReason.MarkChange);
+            }
+        };
+        Context.prototype.findPath = function () {
+            this.pathEnd = this.sourceNode != null && this.destNode != null && this.sourceNode !== this.destNode
+                ? Tesp.Path.findPath(this.app)
+                : null;
+            this.app.triggerChange(Tesp.ChangeReason.PathUpdate);
+        };
+        return Context;
+    })();
+    Tesp.Context = Context;
+})(Tesp || (Tesp = {}));
+var Tesp;
+(function (Tesp) {
     var ContextMenu = (function () {
         function ContextMenu(app, element) {
             var _this = this;
             this.app = app;
             this.element = element;
+            this.isOpen = false;
             this.element.oncontextmenu = this.element.onmousedown = function (ev) { return ev.stopPropagation(); };
             this.element.onclick = function (ev) {
                 ev.stopPropagation();
                 var item = event.target;
                 if (item.classList.contains("link")) {
-                    var context = item.dataset['contextSet'];
+                    var context = item.dataset["contextSet"];
                     if (context !== undefined) {
                         var data = _this.element.dataset;
-                        var nodeId = data['nodeId'];
+                        var nodeId = data["nodeId"];
                         var node;
                         if (nodeId !== undefined && (node = _this.app.world.findNodeById(+nodeId)) != null) {
-                            _this.app.world.setContextNode(context, node);
+                            _this.app.context.setContextNode(context, node);
                         }
                         else {
-                            _this.app.world.setContextLocation(context, +data['posX'], +data['posY']);
+                            _this.app.context.setContextLocation(context, new Tesp.Vec2(+data["posX"], +data["posY"]));
                         }
                     }
                     else {
-                        context = item.dataset['contextUnset'];
+                        context = item.dataset["contextUnset"];
                         if (context !== undefined) {
-                            _this.app.world.clearContext(context);
+                            _this.app.context.clearContext(context);
                         }
                     }
                     _this.hide();
@@ -63,16 +235,26 @@ var tesp;
             };
         }
         ContextMenu.prototype.openNode = function (node) {
-            this.open(node.pos.x, node.pos.y, node);
+            this.open(node.pos, node);
         };
-        ContextMenu.prototype.open = function (x, y, node) {
+        ContextMenu.prototype.open = function (pos, node) {
             var _this = this;
-            if (node != null && !node.permanent)
-                node = null; // disallow operations on temporary nodes
+            // remove node if neither it or its reference are permanent
+            if (node != null && !node.permanent) {
+                if (node.referenceId == null) {
+                    node = null;
+                }
+                else {
+                    node = this.app.world.findNodeById(node.referenceId);
+                    if (node != null && !node.permanent) {
+                        node = null;
+                    }
+                }
+            }
             var lines = [];
-            var landmark = this.app.world.getLandmarkName(x, y);
+            var landmark = this.app.world.getLandmarkName(pos);
             if (node != null) {
-                var feat = this.app.world.features.byName[node.type];
+                var feat = this.app.features.byName[node.type];
                 if (feat != null) {
                     lines.push(feat.location || feat.name);
                     lines.push(node.name);
@@ -83,19 +265,18 @@ var tesp;
                 if (landmark != null && landmark !== node.name) {
                     lines.push(landmark);
                 }
-                x = node.pos.x;
-                y = node.pos.y;
+                pos = node.pos;
             }
             else if (landmark != null) {
                 lines.push(landmark);
             }
-            var region = this.app.world.getRegionName(x, y);
+            var region = this.app.world.getRegionName(pos);
             if (region != null) {
                 lines.push(region + " Region");
             }
             var separator = this.element.getElementsByClassName("separator")[0];
             var child;
-            while ((child = this.element.firstElementChild) != separator) {
+            while ((child = this.element.firstElementChild) !== separator) {
                 this.element.removeChild(child);
             }
             lines.forEach(function (l) {
@@ -103,18 +284,18 @@ var tesp;
                 item.textContent = l;
                 _this.element.insertBefore(item, separator);
             });
-            this.element.style.left = x + "px";
-            this.element.style.top = y + "px";
+            this.element.style.left = pos.x + "px";
+            this.element.style.top = pos.y + "px";
             var data = this.element.dataset;
             if (node != null) {
-                data['nodeId'] = node.id + '';
-                delete data['posX'];
-                delete data['posY'];
+                data["nodeId"] = node.id + "";
+                delete data["posX"];
+                delete data["posY"];
             }
             else {
-                data['posX'] = x + '';
-                data['posY'] = y + '';
-                delete data['nodeId'];
+                data["posX"] = pos.x + "";
+                data["posY"] = pos.y + "";
+                delete data["nodeId"];
             }
             this.element.style.display = "inherit";
             var scrollX = pageXOffset, scrollY = pageYOffset;
@@ -125,64 +306,65 @@ var tesp;
             else if (rect.right > innerWidth - 27) {
                 scrollX = pageXOffset + rect.right - innerWidth + 27;
             }
-            if (rect.top < 10) {
-                scrollY = pageYOffset + rect.top - 10;
+            if (rect.top < 50) {
+                scrollY = pageYOffset + rect.top - 50;
             }
             else if (rect.bottom > innerHeight - 27) {
                 scrollY = pageYOffset + rect.bottom - innerHeight + 27;
             }
             if (scrollX !== pageXOffset || scrollY !== pageYOffset)
                 scroll(scrollX, scrollY);
+            this.isOpen = true;
         };
         ContextMenu.prototype.hide = function () {
-            this.element.style.display = "none";
+            if (this.isOpen) {
+                this.element.style.display = "none";
+                this.isOpen = false;
+            }
         };
         return ContextMenu;
     })();
-    tesp.ContextMenu = ContextMenu;
-})(tesp || (tesp = {}));
-var tesp;
-(function (tesp) {
+    Tesp.ContextMenu = ContextMenu;
+})(Tesp || (Tesp = {}));
+var Tesp;
+(function (Tesp) {
     var Controls = (function () {
         function Controls(app, element) {
             var _this = this;
             this.app = app;
             this.element = element;
-            this.app.world.addListener(function (reason) {
-                if (reason === tesp.WorldUpdate.PathUpdate)
+            this.app.addChangeListener(function (reason) {
+                if (reason === Tesp.ChangeReason.PathUpdate)
                     _this.updatePath();
-                else if (reason === tesp.WorldUpdate.SourceChange)
-                    _this.updateNodeInfo('.control-source-info', _this.app.world.sourceNode);
-                else if (reason === tesp.WorldUpdate.DestinationChange)
-                    _this.updateNodeInfo('.control-destination-info', _this.app.world.destNode);
-                else if (reason === tesp.WorldUpdate.MarkChange)
-                    _this.updateNodeInfo('.control-mark-info', _this.app.world.markNode);
+                else if (reason === Tesp.ChangeReason.SourceChange)
+                    _this.updateNodeInfo(".control-source-info", _this.app.context.sourceNode);
+                else if (reason === Tesp.ChangeReason.DestinationChange)
+                    _this.updateNodeInfo(".control-destination-info", _this.app.context.destNode);
+                else if (reason === Tesp.ChangeReason.MarkChange)
+                    _this.updateNodeInfo(".control-mark-info", _this.app.context.markNode);
             });
+            this.pathContainer = element.querySelector(".path-container");
+            this.featuresContainer = element.querySelector(".features-container");
+            this.searchInput = element.querySelector(".search-input");
+            var featuresVisible = false;
+            element.querySelector(".settings-icon").onclick = function () {
+                return _this.featuresContainer.style.display = (featuresVisible = !featuresVisible) ? "block" : "none";
+            };
             var nodeSearchIndex = {};
-            var searchInput = element.querySelector('.search-input');
-            var datalist = element.querySelector('#search-list');
+            var datalist = element.querySelector("#search-list");
             this.app.world.nodes
                 .concat(this.app.world.landmarks.map(function (a) { return a.target; }))
                 .forEach(function (n) {
                 var opt = document.createElement("option");
-                var feat = _this.app.world.features.byName[n.type];
-                var value = feat ? n.name + " (" + _this.app.world.features.byName[n.type].name + ")" : n.name;
+                var feat = _this.app.features.byName[n.type];
+                var value = feat ? n.name + " (" + (feat.location || feat.name) + ")" : n.name;
                 nodeSearchIndex[value] = n;
                 opt.value = value;
                 datalist.appendChild(opt);
             });
-            for (var child = element.firstElementChild; child; child = child.nextElementSibling) {
-                var name = child.dataset['controlContainer'];
-                if (name === "path") {
-                    this.pathContainer = child;
-                }
-                else if (name === "features") {
-                    this.featuresContainer = child;
-                }
-            }
             this.drawFeatures();
-            searchInput.oninput = function (ev) {
-                var node = nodeSearchIndex[searchInput.value];
+            this.searchInput.oninput = function () {
+                var node = nodeSearchIndex[_this.searchInput.value];
                 if (node !== undefined) {
                     _this.app.menu.openNode(node);
                 }
@@ -196,7 +378,7 @@ var tesp;
             var el = this.element.querySelector(selector);
             if (node != null) {
                 el.textContent = node.longName;
-                el.onclick = function (ev) { return _this.app.menu.openNode(node); };
+                el.onclick = function () { return _this.app.menu.openNode(node); };
             }
             else {
                 el.textContent = "";
@@ -205,10 +387,11 @@ var tesp;
         };
         Controls.prototype.updatePath = function () {
             var child;
-            while (child = this.pathContainer.firstElementChild) {
+            while ((child = this.pathContainer.firstElementChild)) {
                 this.pathContainer.removeChild(child);
             }
-            var pathNode = this.app.world.pathEnd;
+            var pathNode = this.app.context.pathEnd;
+            this.pathContainer.style.display = pathNode ? "block" : "none";
             while (pathNode) {
                 this.pathContainer.insertBefore(this.drawPathNode(pathNode), this.pathContainer.firstElementChild);
                 pathNode = pathNode.prev;
@@ -227,7 +410,7 @@ var tesp;
                     icon = "compass";
                 }
                 else {
-                    var feat = this.app.world.features.byName[edge.type];
+                    var feat = this.app.features.byName[edge.type];
                     if (feat) {
                         action = feat.verb || feat.name;
                         icon = feat.icon;
@@ -238,7 +421,7 @@ var tesp;
                     }
                 }
                 text = " " + action + " to ";
-                linkText = node.type == edge.type ? node.name : node.longName;
+                linkText = node.type === edge.type ? node.name : node.longName;
             }
             else {
                 icon = "map-marker";
@@ -259,17 +442,17 @@ var tesp;
         };
         Controls.prototype.drawFeatures = function () {
             var _this = this;
-            this.app.world.features.forEach(function (f) {
+            this.app.features.forEach(function (f) {
                 var el = document.createElement("div");
                 el.textContent = f.name + ":";
                 el.appendChild(_this.drawCheckbox(function (val) {
                     f.hidden = !val;
-                    _this.app.world.trigger(tesp.WorldUpdate.FeatureChange);
+                    _this.app.triggerChange(Tesp.ChangeReason.FeatureChange);
                 }, !f.hidden));
                 if (!f.visualOnly)
                     el.appendChild(_this.drawCheckbox(function (val) {
                         f.disabled = !val;
-                        _this.app.world.trigger(tesp.WorldUpdate.FeatureChange);
+                        _this.app.triggerChange(Tesp.ChangeReason.FeatureChange);
                     }, !f.disabled));
                 _this.featuresContainer.appendChild(el);
             });
@@ -277,31 +460,68 @@ var tesp;
         Controls.prototype.drawCheckbox = function (onchange, initial) {
             var input = document.createElement("input");
             input.type = "checkbox";
-            input.onchange = function (ev) { return onchange(input.checked); };
+            input.onchange = function () { return onchange(input.checked); };
             input.checked = initial;
             return input;
         };
         return Controls;
     })();
-    tesp.Controls = Controls;
-})(tesp || (tesp = {}));
-var tesp;
-(function (tesp) {
+    Tesp.Controls = Controls;
+})(Tesp || (Tesp = {}));
+var Tesp;
+(function (Tesp) {
+    var Feature = (function () {
+        function Feature() {
+        }
+        return Feature;
+    })();
+    Tesp.Feature = Feature;
+    var Features = (function () {
+        function Features() {
+        }
+        Features.init = function () {
+            var features = [
+                { name: "Mark/Recall", verb: "Recall", type: "mark", icon: "bolt" },
+                { name: "Mages Guild", verb: "Guild Guide", type: "mages-guild", icon: "eye" },
+                { name: "Silt Strider", verb: "Silt Strider", type: "silt-strider", icon: "bug" },
+                { name: "Boat", location: "Docks", type: "boat", icon: "ship" },
+                { name: "Holamayan Boat", location: "Docks", verb: "Boat", type: "holamayan", icon: "ship" },
+                { name: "Propylon Chamber", type: "propylon", icon: "cog" },
+                { name: "Gondola", type: "gondola", icon: "ship" },
+                { name: "Divine Intervention", location: "Imperial Cult Shrine", type: "divine", icon: "bolt" },
+                { name: "Almsivi Intervention", location: "Tribunal Temple", type: "almsivi", icon: "bolt" },
+                { name: "Transport lines", type: "edge", visualOnly: true },
+                { name: "Locations", type: "node", visualOnly: true },
+                { name: "Intervention area border", type: "area", visualOnly: true },
+                { name: "Gridlines", type: "grid", visualOnly: true }
+            ];
+            features.byName = {};
+            var fIdx = features.byName;
+            features.forEach(function (f) { return fIdx[f.type] = f; });
+            fIdx["edge"].hidden = fIdx["area"].hidden = fIdx["grid"].hidden = true;
+            return features;
+        };
+        return Features;
+    })();
+    Tesp.Features = Features;
+})(Tesp || (Tesp = {}));
+var Tesp;
+(function (Tesp) {
     var Map = (function () {
         function Map(app, element) {
             var _this = this;
             this.app = app;
             this.element = element;
-            this.app.world.addListener(function (reason) {
-                if (reason === tesp.WorldUpdate.PathUpdate)
+            this.app.addChangeListener(function (reason) {
+                if (reason === Tesp.ChangeReason.PathUpdate)
                     _this.renderPath();
-                else if (reason === tesp.WorldUpdate.SourceChange)
+                else if (reason === Tesp.ChangeReason.SourceChange)
                     _this.renderSource();
-                else if (reason === tesp.WorldUpdate.DestinationChange)
+                else if (reason === Tesp.ChangeReason.DestinationChange)
                     _this.renderDestination();
-                else if (reason === tesp.WorldUpdate.MarkChange)
+                else if (reason === Tesp.ChangeReason.MarkChange)
                     _this.renderMark();
-                else if (reason === tesp.WorldUpdate.FeatureChange)
+                else if (reason === Tesp.ChangeReason.FeatureChange)
                     _this.updateFeatures();
             });
             element.onclick = function (ev) {
@@ -324,8 +544,8 @@ var tesp;
         }
         Map.prototype.getEventNode = function (event) {
             var target = event.target;
-            if (target.classList.contains('map-node')) {
-                var id = target.dataset['nodeId'];
+            if (target.classList.contains("map-node")) {
+                var id = target.dataset["nodeId"];
                 if (id !== undefined) {
                     return this.app.world.findNodeById(+id);
                 }
@@ -333,22 +553,22 @@ var tesp;
             return null;
         };
         Map.prototype.triggerContextMenu = function (ev, node) {
-            this.app.menu.open(ev.pageX, ev.pageY, node || this.getEventNode(ev));
+            this.app.menu.open(new Tesp.Vec2(ev.pageX, ev.pageY), node || this.getEventNode(ev));
         };
         Map.prototype.initDragScroll = function () {
             var _this = this;
-            var img = this.element.querySelector('img');
+            var img = this.element.querySelector("img");
             var mousedown = false, prevX, prevY;
             var stop = function (ev) {
                 mousedown = false;
-                _this.app.toggleClass("scrolling", false);
+                _this.app.toggleBodyClass("scrolling", false);
                 ev.preventDefault();
             };
             var start = function (ev) {
                 mousedown = true;
                 prevX = ev.clientX;
                 prevY = ev.clientY;
-                _this.app.toggleClass("scrolling", true);
+                _this.app.toggleBodyClass("scrolling", true);
                 ev.preventDefault();
             };
             img.onmousedown = function (ev) {
@@ -418,16 +638,17 @@ var tesp;
                     _this.areaContainer.appendChild(_this.drawCellEdge(row.x2 + 1, row.y, row.x2 + 1, row.y + 1, type));
                     prev = row;
                 }
-                _this.areaContainer.appendChild(_this.drawCellEdge(prev.x1, prev.y + 1, prev.x2 + 1, prev.y + 1, type));
+                if (prev != null)
+                    _this.areaContainer.appendChild(_this.drawCellEdge(prev.x1, prev.y + 1, prev.x2 + 1, prev.y + 1, type));
             });
         };
         Map.prototype.drawCellEdge = function (x1, y1, x2, y2, type) {
-            return this.drawEdge(tesp.Vec2.fromCell(x1, y1), tesp.Vec2.fromCell(x2, y2), type, "map-area");
+            return this.drawEdge(Tesp.Vec2.fromCell(x1, y1), Tesp.Vec2.fromCell(x2, y2), type, "map-area");
         };
         Map.prototype.renderPath = function () {
             if (this.pathContainer != null)
                 this.pathContainer.parentElement.removeChild(this.pathContainer);
-            var pathNode = this.app.world.pathEnd;
+            var pathNode = this.app.context.pathEnd;
             if (pathNode == null) {
                 this.pathContainer = null;
                 return;
@@ -435,18 +656,18 @@ var tesp;
             this.pathContainer = document.createElement("div");
             this.element.appendChild(this.pathContainer);
             while (pathNode && pathNode.prev) {
-                this.pathContainer.appendChild(this.drawEdge(pathNode.node.pos, pathNode.prev.node.pos, 'path', 'map-' + pathNode.prevEdge.type));
+                this.pathContainer.appendChild(this.drawEdge(pathNode.node.pos, pathNode.prev.node.pos, "path", "map-" + pathNode.prevEdge.type));
                 pathNode = pathNode.prev;
             }
         };
         Map.prototype.renderMark = function () {
-            this.markElem = this.addOrUpdateNodeElem(this.app.world.markNode, this.markElem);
+            this.markElem = this.addOrUpdateNodeElem(this.app.context.markNode, this.markElem);
         };
         Map.prototype.renderSource = function () {
-            this.sourceElem = this.addOrUpdateNodeElem(this.app.world.sourceNode, this.sourceElem);
+            this.sourceElem = this.addOrUpdateNodeElem(this.app.context.sourceNode, this.sourceElem);
         };
         Map.prototype.renderDestination = function () {
-            this.destElem = this.addOrUpdateNodeElem(this.app.world.destNode, this.destElem);
+            this.destElem = this.addOrUpdateNodeElem(this.app.context.destNode, this.destElem);
         };
         Map.prototype.addOrUpdateNodeElem = function (node, elem) {
             if (elem)
@@ -459,18 +680,19 @@ var tesp;
             if (!this.gridContainer) {
                 this.gridContainer = document.createElement("div");
                 this.element.appendChild(this.gridContainer);
-                for (var i = 0; i < 37; i++) {
-                    var el = document.createElement('div');
+                var i, el;
+                for (i = 0; i < 37; i++) {
+                    el = document.createElement("div");
                     el.classList.add("map-grid");
                     el.classList.add("map-grid-v");
-                    el.style.left = (i * tesp.Cell.width + tesp.Cell.widthOffset) + "px";
+                    el.style.left = (i * Tesp.Cell.width + Tesp.Cell.widthOffset) + "px";
                     this.gridContainer.appendChild(el);
                 }
-                for (var i = 0; i < 42; i++) {
-                    var el = document.createElement('div');
+                for (i = 0; i < 42; i++) {
+                    el = document.createElement("div");
                     el.classList.add("map-grid");
                     el.classList.add("map-grid-h");
-                    el.style.top = (i * tesp.Cell.height + tesp.Cell.heightOffset) + "px";
+                    el.style.top = (i * Tesp.Cell.height + Tesp.Cell.heightOffset) + "px";
                     this.gridContainer.appendChild(el);
                 }
             }
@@ -478,7 +700,7 @@ var tesp;
         Map.prototype.updateFeatures = function () {
             var _this = this;
             this.element.className = "";
-            this.app.world.features.forEach(function (f) {
+            this.app.features.forEach(function (f) {
                 if (f.hidden)
                     _this.element.classList.add("hide-" + f.type);
             });
@@ -489,7 +711,7 @@ var tesp;
             element.classList.add("map-" + node.type);
             element.style.left = node.pos.x + "px";
             element.style.top = node.pos.y + "px";
-            element.dataset['nodeId'] = (node.referenceId || node.id) + '';
+            element.dataset["nodeId"] = (node.referenceId || node.id) + "";
             return element;
         };
         Map.prototype.drawEdge = function (n1, n2, type, subtype) {
@@ -507,102 +729,10 @@ var tesp;
         };
         return Map;
     })();
-    tesp.Map = Map;
-})(tesp || (tesp = {}));
-var tesp;
-(function (tesp) {
-    var Vec2 = (function () {
-        function Vec2(x, y) {
-            this.x = x;
-            this.y = y;
-        }
-        Vec2.prototype.distance = function (other) {
-            return Math.sqrt(((other.x - this.x) * (other.x - this.x)) + ((other.y - this.y) * (other.y - this.y)));
-        };
-        Vec2.fromCell = function (x, y) {
-            return new Vec2(x * Cell.width + Cell.widthOffset, y * Cell.height + Cell.heightOffset);
-        };
-        return Vec2;
-    })();
-    tesp.Vec2 = Vec2;
-    var Cell = (function () {
-        function Cell() {
-        }
-        Cell.fromPosition = function (pos) {
-            return new Vec2((pos.x - Cell.widthOffset) / Cell.width, (pos.y - Cell.heightOffset) / Cell.height);
-        };
-        Cell.width = 44.5;
-        Cell.height = 44.6;
-        Cell.widthOffset = 20;
-        Cell.heightOffset = 35;
-        return Cell;
-    })();
-    tesp.Cell = Cell;
-    var Node = (function () {
-        function Node(name, longName, x, y, type, permanent) {
-            if (permanent === void 0) { permanent = false; }
-            this.name = name;
-            this.longName = longName;
-            this.type = type;
-            this.permanent = permanent;
-            this.id = Node.identity++;
-            this.pos = new Vec2(x, y);
-            this.edges = [];
-        }
-        Node.identity = 1;
-        return Node;
-    })();
-    tesp.Node = Node;
-    var Edge = (function () {
-        function Edge(srcNode, destNode, cost) {
-            this.srcNode = srcNode;
-            this.destNode = destNode;
-            this.cost = cost;
-        }
-        return Edge;
-    })();
-    tesp.Edge = Edge;
-    var CellRow = (function () {
-        function CellRow(y, x1, x2) {
-            this.y = y;
-            this.x1 = x1;
-            this.x2 = x2;
-            this.width = x2 - x1 + 1;
-        }
-        return CellRow;
-    })();
-    tesp.CellRow = CellRow;
-    var Area = (function () {
-        function Area(target, rows) {
-            this.target = target;
-            this.rows = rows;
-            this.minY = rows[0].y;
-            this.maxY = rows[rows.length - 1].y;
-        }
-        Area.prototype.containsCell = function (pos) {
-            if (pos.y >= this.minY && pos.y < this.maxY + 1) {
-                var row = this.rows[Math.floor(pos.y) - this.minY];
-                return pos.x >= row.x1 && pos.x < row.x2 + 1;
-            }
-            return false;
-        };
-        return Area;
-    })();
-    tesp.Area = Area;
-    (function (WorldUpdate) {
-        WorldUpdate[WorldUpdate["SourceChange"] = 0] = "SourceChange";
-        WorldUpdate[WorldUpdate["DestinationChange"] = 1] = "DestinationChange";
-        WorldUpdate[WorldUpdate["MarkChange"] = 2] = "MarkChange";
-        WorldUpdate[WorldUpdate["FeatureChange"] = 3] = "FeatureChange";
-        WorldUpdate[WorldUpdate["PathUpdate"] = 4] = "PathUpdate";
-    })(tesp.WorldUpdate || (tesp.WorldUpdate = {}));
-    var WorldUpdate = tesp.WorldUpdate;
-    var Feature = (function () {
-        function Feature() {
-        }
-        return Feature;
-    })();
-    tesp.Feature = Feature;
+    Tesp.Map = Map;
+})(Tesp || (Tesp = {}));
+var Tesp;
+(function (Tesp) {
     var PathEdge = (function () {
         function PathEdge(target, cost, type) {
             this.target = target;
@@ -611,7 +741,7 @@ var tesp;
         }
         return PathEdge;
     })();
-    tesp.PathEdge = PathEdge;
+    Tesp.PathEdge = PathEdge;
     var PathNode = (function () {
         function PathNode(node) {
             this.node = node;
@@ -619,133 +749,27 @@ var tesp;
         }
         return PathNode;
     })();
-    tesp.PathNode = PathNode;
-    var World = (function () {
-        function World(app, data) {
-            var _this = this;
-            this.app = app;
-            this.listeners = [];
-            this.nodesById = {};
-            this.features = [
-                { name: "Mark/Recall", verb: "Recall", type: "mark", icon: "bolt" },
-                { name: "Mages Guild", verb: "Guild Guide", type: "mages-guild", icon: "eye" },
-                { name: "Silt Strider", verb: "Silt Strider", type: "silt-strider", icon: "bug" },
-                { name: "Boat", location: "Docks", type: "boat", icon: "ship" },
-                { name: "Holamayan Boat", location: "Docks", verb: "Boat", type: "holamayan", icon: "ship" },
-                { name: "Propylon Chamber", type: "propylon", icon: "cog" },
-                { name: "Gondola", type: "gondola", icon: "ship" },
-                { name: "Divine Intervention", location: "Imperial Cult Shrine", type: "divine", icon: "bolt" },
-                { name: "Almsivi Intervention", location: "Tribunal Temple", type: "almsivi", icon: "bolt" },
-                { name: "Transport lines", type: "edge", visualOnly: true },
-                { name: "Locations", type: "node", visualOnly: true },
-                { name: "Intervention area border", type: "area", visualOnly: true },
-                { name: "Gridlines", type: "grid", visualOnly: true }
-            ];
-            var fIdx = this.features.byName = {};
-            this.features.forEach(function (f) { return fIdx[f.type] = f; });
-            fIdx['edge'].hidden = fIdx['area'].hidden = fIdx['grid'].hidden = true;
-            this.nodes = [];
-            this.edges = [];
-            this.areas = [];
-            for (var k in data.transport) {
-                this.loadTransport(data.transport, k);
-            }
-            this.regions = data.regions
-                .map(function (a) { return _this.makeArea(new Node(a.name, a.name, 0, 0, "region"), a); });
-            this.landmarks = data.landmarks.map(function (a) {
-                var node = new Node(a.name, a.name, 0, 0, "landmark");
-                var area = _this.makeArea(node, a);
-                // set node location to average center point of all cells
-                var sumX = 0;
-                var sumY = 0;
-                var count = 0;
-                area.rows.forEach(function (r) {
-                    sumX += (r.x1 + r.width / 2) * r.width;
-                    sumY += (r.y + 0.5) * r.width;
-                    count += r.width;
-                });
-                node.pos = Vec2.fromCell(sumX / count, sumY / count);
-                return area;
-            });
-            // index by id
-            this.nodesById = {};
-            this.nodes.forEach(function (n) { return _this.nodesById[n.id] = n; });
-            this.addListener(function (reason) {
-                if (reason === WorldUpdate.SourceChange
-                    || reason === WorldUpdate.DestinationChange
-                    || reason === WorldUpdate.MarkChange
-                    || reason === WorldUpdate.FeatureChange)
-                    _this.findPath();
-                if (reason === WorldUpdate.MarkChange)
-                    _this.app.toggleClass("has-mark", _this.markNode != null);
-            });
+    Tesp.PathNode = PathNode;
+    var Path = (function () {
+        function Path() {
         }
-        World.prototype.loadTransport = function (data, type) {
-            var _this = this;
-            var array = data[type];
-            var feat = this.features.byName[type];
-            var typeName = feat.location || feat.name;
-            var nodes = array.map(function (n) { return new Node(n.name, typeName + ", " + n.name, n.x, n.y, type, true); });
-            this.nodes = this.nodes.concat(nodes);
-            var cost = World.transportCost;
-            array.forEach(function (n, i1) {
-                var n1 = nodes[i1];
-                if (n.edges) {
-                    n.edges.forEach(function (i2) {
-                        var n2 = nodes[i2];
-                        var edge = new Edge(n1, n2, cost);
-                        n1.edges.push(edge);
-                        n2.edges.push(edge);
-                        _this.edges.push(edge);
-                    });
-                }
-                if (n.oneWayEdges) {
-                    n.oneWayEdges.forEach(function (i2) {
-                        var edge = new Edge(n1, nodes[i2], cost);
-                        n1.edges.push(edge);
-                        _this.edges.push(edge);
-                    });
-                }
-                if (n.cells) {
-                    _this.areas.push(_this.makeArea(n1, n));
-                }
-            });
-        };
-        World.prototype.makeArea = function (node, data) {
-            var y = data.top || 0;
-            var rows = data.cells.map(function (c) { return new CellRow(y++, c[0], c[1]); });
-            return new Area(node, rows);
-        };
-        World.prototype.addListener = function (listener) {
-            this.listeners.push(listener);
-        };
-        World.prototype.trigger = function (reason) {
-            this.listeners.forEach(function (fn) { return fn(reason); });
-        };
-        World.prototype.findNodeById = function (id) {
-            return this.nodesById[id] || null;
-        };
-        World.prototype.findPath = function () {
-            var _this = this;
-            if (this.sourceNode == null || this.destNode == null || this.sourceNode === this.destNode) {
-                this.pathEnd = null;
-                this.trigger(WorldUpdate.PathUpdate);
-                return;
-            }
+        Path.findPath = function (app) {
+            var world = app.world;
+            var context = app.context;
             // create nodes
             var nodeMap = {};
-            var feats = this.features.byName;
-            var nodes = this.nodes
-                .filter(function (n) { return !feats[n.type].disabled && n !== _this.sourceNode && n !== _this.destNode; })
+            var feats = app.features.byName;
+            var nodes = world.nodes
+                .filter(function (n) { return !feats[n.type].disabled && n !== context.sourceNode && n !== context.destNode; })
                 .map(function (n) { return nodeMap[n.id] = new PathNode(n); });
-            var source = new PathNode(this.sourceNode);
+            var source = new PathNode(context.sourceNode);
             source.dist = 0;
             nodes.push(source);
-            nodeMap[this.sourceNode.id] = source;
-            var dest = new PathNode(this.destNode);
+            nodeMap[context.sourceNode.id] = source;
+            var dest = new PathNode(context.destNode);
             nodes.push(dest);
-            nodeMap[this.destNode.id] = dest;
-            var maxCost = this.sourceNode.pos.distance(this.destNode.pos);
+            nodeMap[context.destNode.id] = dest;
+            var maxCost = context.sourceNode.pos.distance(context.destNode.pos);
             // explicit edges (services)
             nodes.forEach(function (n) {
                 return n.edges = n.node.edges
@@ -760,22 +784,22 @@ var tesp;
                     .filter(function (e) { return e.cost <= maxCost; }));
             });
             // mark
-            if (this.markNode != null && !feats['mark'].disabled) {
-                var mn = new PathNode(this.markNode);
+            if (context.markNode != null && !feats["mark"].disabled) {
+                var mn = new PathNode(context.markNode);
                 mn.edges = nodes.filter(function (n) { return n !== source; })
                     .map(function (n) { return new PathEdge(n, mn.node.pos.distance(n.node.pos), "walk"); })
                     .filter(function (e) { return e.cost < maxCost; });
-                source.edges.push(new PathEdge(mn, World.spellCost, "mark"));
+                source.edges.push(new PathEdge(mn, Path.spellCost, "mark"));
                 nodes.push(mn);
             }
             // intervention
             nodes.forEach(function (n) {
-                var cell = Cell.fromPosition(n.node.pos);
-                _this.areas.forEach(function (a) {
+                var cell = Tesp.Cell.fromPosition(n.node.pos);
+                world.areas.forEach(function (a) {
                     if (!feats[a.target.type].disabled) {
                         if (a.containsCell(cell)) {
                             // node inside area, teleport to temple/shrine
-                            n.edges.push(new PathEdge(nodeMap[a.target.id], World.spellCost, a.target.type));
+                            n.edges.push(new PathEdge(nodeMap[a.target.id], Path.spellCost, a.target.type));
                         }
                         else {
                             // node outside area, walk to edge
@@ -783,21 +807,21 @@ var tesp;
                             var closest;
                             a.rows.forEach(function (r) {
                                 // v is closest point (in cell units) from node to row
-                                var v = new Vec2(Math.max(Math.min(cell.x, r.x1 + r.width), r.x1), Math.max(Math.min(cell.y, r.y + 1), r.y));
+                                var v = new Tesp.Vec2(Math.max(Math.min(cell.x, r.x1 + r.width), r.x1), Math.max(Math.min(cell.y, r.y + 1), r.y));
                                 var alt = cell.distance(v);
                                 if (alt < dist) {
                                     dist = alt;
                                     closest = v;
                                 }
                             });
-                            var pos = Vec2.fromCell(closest.x, closest.y);
+                            var pos = Tesp.Vec2.fromCell(closest.x, closest.y);
                             var cost = n.node.pos.distance(pos);
                             if (cost < maxCost) {
                                 // new node to allow us to teleport once we're in the area
-                                var feat = _this.features.byName[a.target.type];
+                                var feat = app.features.byName[a.target.type];
                                 var name = feat.name + " range of " + a.target.name;
-                                var an = new PathNode(new Node(name, name, pos.x, pos.y, "area"));
-                                an.edges = [new PathEdge(nodeMap[a.target.id], World.spellCost, a.target.type)];
+                                var an = new PathNode(new Tesp.Node(name, name, pos, "area"));
+                                an.edges = [new PathEdge(nodeMap[a.target.id], Path.spellCost, a.target.type)];
                                 nodes.push(an);
                                 n.edges.push(new PathEdge(an, cost, "walk"));
                             }
@@ -820,73 +844,100 @@ var tesp;
                     }
                 }
             }
-            this.pathEnd = dest;
-            this.trigger(WorldUpdate.PathUpdate);
+            return dest;
         };
-        World.prototype.getRegionName = function (x, y) {
+        Path.spellCost = 5;
+        return Path;
+    })();
+    Tesp.Path = Path;
+})(Tesp || (Tesp = {}));
+var Tesp;
+(function (Tesp) {
+    var World = (function () {
+        function World(app, data) {
+            var _this = this;
+            this.app = app;
+            this.nodesById = {};
+            this.nodes = [];
+            this.edges = [];
+            this.areas = [];
+            Object.getOwnPropertyNames(data.transport).forEach(function (k) { return _this.loadTransport(data.transport, k); });
+            this.regions = data.regions.map(function (a) { return World.makeArea(new Tesp.Node(a.name, a.name, new Tesp.Vec2(0, 0), "region"), a); });
+            this.landmarks = data.landmarks.map(function (a) {
+                var node = new Tesp.Node(a.name, a.name, new Tesp.Vec2(0, 0), "landmark");
+                var area = World.makeArea(node, a);
+                // set node location to average center point of all cells
+                var sumX = 0;
+                var sumY = 0;
+                var count = 0;
+                area.rows.forEach(function (r) {
+                    sumX += (r.x1 + r.width / 2) * r.width;
+                    sumY += (r.y + 0.5) * r.width;
+                    count += r.width;
+                });
+                node.pos = Tesp.Vec2.fromCell(sumX / count, sumY / count);
+                return area;
+            });
+            // index by id
+            this.nodesById = {};
+            this.nodes.forEach(function (n) { return _this.nodesById[n.id] = n; });
+        }
+        World.prototype.loadTransport = function (data, type) {
+            var _this = this;
+            var array = data[type];
+            var feat = this.app.features.byName[type];
+            var typeName = feat.location || feat.name;
+            var nodes = array.map(function (n) { return new Tesp.Node(n.name, typeName + ", " + n.name, new Tesp.Vec2(n.x, n.y), type, true); });
+            this.nodes = this.nodes.concat(nodes);
+            var cost = World.transportCost;
+            array.forEach(function (n, i1) {
+                var n1 = nodes[i1];
+                if (n.edges) {
+                    n.edges.forEach(function (i2) {
+                        var n2 = nodes[i2];
+                        var edge = new Tesp.Edge(n1, n2, cost);
+                        n1.edges.push(edge);
+                        n2.edges.push(edge);
+                        _this.edges.push(edge);
+                    });
+                }
+                if (n.oneWayEdges) {
+                    n.oneWayEdges.forEach(function (i2) {
+                        var edge = new Tesp.Edge(n1, nodes[i2], cost);
+                        n1.edges.push(edge);
+                        _this.edges.push(edge);
+                    });
+                }
+                if (n.cells) {
+                    _this.areas.push(World.makeArea(n1, n));
+                }
+            });
+        };
+        World.makeArea = function (node, data) {
+            var y = data.top || 0;
+            var rows = data.cells.map(function (c) { return new Tesp.CellRow(y++, c[0], c[1]); });
+            return new Tesp.Area(node, rows);
+        };
+        World.prototype.findNodeById = function (id) {
+            return this.nodesById[id] || null;
+        };
+        World.prototype.getRegionName = function (pos) {
+            var area = World.getAreaByCell(this.regions, Tesp.Cell.fromPosition(pos));
+            return area != null ? area.target.name : null;
+        };
+        World.prototype.getLandmarkName = function (pos) {
+            var area = World.getAreaByCell(this.landmarks, Tesp.Cell.fromPosition(pos));
+            return area != null ? area.target.name : null;
+        };
+        World.getAreaByCell = function (source, cell) {
             var area;
-            var cell = Cell.fromPosition(new Vec2(x, y));
-            return this.regions.some(function (r) { return r.containsCell(cell) && (area = r) != null; })
-                ? area.target.name
-                : null;
-        };
-        World.prototype.getLandmarkName = function (x, y) {
-            var area;
-            var cell = Cell.fromPosition(new Vec2(x, y));
-            return this.landmarks.some(function (r) { return r.containsCell(cell) && (area = r) != null; })
-                ? area.target.name
-                : null;
-        };
-        World.prototype.setContextLocation = function (context, x, y) {
-            var areaName = this.getLandmarkName(x, y) || this.getRegionName(x, y);
-            if (context === 'source') {
-                var name = areaName || "You";
-                this.setContextNode(context, new Node(name, name, x, y, "source"));
-            }
-            else if (context === 'destination') {
-                var name = areaName || "Your destination";
-                this.setContextNode(context, new Node(name, name, x, y, "destination"));
-            }
-            else if (context === 'mark') {
-                var name = areaName ? "Mark in " + areaName : "Mark";
-                this.markNode = new Node(name, name, x, y, "mark");
-                this.trigger(WorldUpdate.MarkChange);
-            }
-        };
-        World.prototype.setContextNode = function (context, node) {
-            if (context === 'source') {
-                this.sourceNode = node;
-                this.trigger(WorldUpdate.SourceChange);
-            }
-            else if (context === 'destination') {
-                this.destNode = node;
-                this.trigger(WorldUpdate.DestinationChange);
-            }
-            else if (context === 'mark') {
-                var pos = node.pos;
-                this.markNode = new Node(node.name, node.longName, pos.x, pos.y, "mark");
-                this.markNode.referenceId = node.referenceId || node.id;
-                this.trigger(WorldUpdate.MarkChange);
-            }
-        };
-        World.prototype.clearContext = function (context) {
-            if (context === 'source') {
-                this.sourceNode = null;
-                this.trigger(WorldUpdate.SourceChange);
-            }
-            else if (context === 'destination') {
-                this.destNode = null;
-                this.trigger(WorldUpdate.DestinationChange);
-            }
-            else if (context === 'mark') {
-                this.markNode = null;
-                this.trigger(WorldUpdate.MarkChange);
-            }
+            if (source.some(function (r) { return r.containsCell(cell) && (area = r) != null; }))
+                return area;
+            return null;
         };
         World.transportCost = 10;
-        World.spellCost = 5;
         return World;
     })();
-    tesp.World = World;
-})(tesp || (tesp = {}));
+    Tesp.World = World;
+})(Tesp || (Tesp = {}));
 //# sourceMappingURL=all.js.map
