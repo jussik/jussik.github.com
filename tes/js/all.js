@@ -1,18 +1,42 @@
 var Tesp;
 (function (Tesp) {
     (function (ChangeReason) {
-        ChangeReason[ChangeReason["SourceChange"] = 0] = "SourceChange";
-        ChangeReason[ChangeReason["DestinationChange"] = 1] = "DestinationChange";
-        ChangeReason[ChangeReason["MarkChange"] = 2] = "MarkChange";
-        ChangeReason[ChangeReason["FeatureChange"] = 3] = "FeatureChange";
-        ChangeReason[ChangeReason["PathUpdate"] = 4] = "PathUpdate";
+        ChangeReason[ChangeReason["None"] = 0] = "None";
+        /** The selected source node has changed */
+        ChangeReason[ChangeReason["SourceChange"] = 1] = "SourceChange";
+        /** The selected destination node has changed */
+        ChangeReason[ChangeReason["DestinationChange"] = 2] = "DestinationChange";
+        /** The mark node location has changed */
+        ChangeReason[ChangeReason["MarkChange"] = 4] = "MarkChange";
+        /** The either the source, destination or mark location has changed */
+        ChangeReason[ChangeReason["ContextChange"] = 7] = "ContextChange";
+        /** The enabled state or visibility of a feature has changed */
+        ChangeReason[ChangeReason["FeatureChange"] = 8] = "FeatureChange";
+        /** A new path has been calculated */
+        ChangeReason[ChangeReason["PathUpdate"] = 16] = "PathUpdate";
+        /** An input event has triggered menus to close */
+        ChangeReason[ChangeReason["ClearMenus"] = 32] = "ClearMenus";
+        ChangeReason[ChangeReason["Any"] = 63] = "Any";
     })(Tesp.ChangeReason || (Tesp.ChangeReason = {}));
     var ChangeReason = Tesp.ChangeReason;
+    var ChangeListener = (function () {
+        function ChangeListener(reasons, func) {
+            this.reasons = reasons;
+            this.func = func;
+        }
+        ChangeListener.prototype.trigger = function (reason) {
+            if ((this.reasons & reason) !== 0)
+                this.func(reason);
+        };
+        return ChangeListener;
+    })();
+    Tesp.ChangeListener = ChangeListener;
     /** Core TESPathfinder application */
     var Application = (function () {
         function Application() {
             var _this = this;
             this.listeners = [];
+            this.element = document.body;
             this.loaded = window.fetch("data/data.json")
                 .then(function (res) { return res.json(); })
                 .then(function (data) {
@@ -21,23 +45,27 @@ var Tesp;
                 _this.world = new Tesp.World(_this, data);
                 _this.map = new Tesp.Map(_this, document.getElementById("map"));
                 _this.controls = new Tesp.Controls(_this, document.getElementById("controls"));
-                _this.menu = new Tesp.ContextMenu(_this, document.getElementById("context-menu"));
-                document.body.onmousedown = document.body.oncontextmenu = function () {
-                    // TODO: refactor into their respective classes
-                    _this.menu.hide();
-                    _this.controls.clearSearch();
-                };
+                _this.ctxMenu = new Tesp.ContextMenu(_this);
+                document.body.onmousedown = document.body.oncontextmenu = function () { return _this.triggerChange(ChangeReason.ClearMenus); };
                 _this.toggleBodyClass("loading", false);
                 return _this;
             });
         }
         /** Listen for application level changes */
-        Application.prototype.addChangeListener = function (listener) {
+        Application.prototype.addChangeListener = function (reasons, func) {
+            var listener = new ChangeListener(reasons, func);
             this.listeners.push(listener);
+            return listener;
+        };
+        /** Remove a previously added listener */
+        Application.prototype.removeChangeListener = function (listener) {
+            var ix = this.listeners.indexOf(listener);
+            if (ix > -1)
+                this.listeners.splice(ix, 1);
         };
         /** Inform all listeners about a new change */
         Application.prototype.triggerChange = function (reason) {
-            this.listeners.forEach(function (fn) { return fn(reason); });
+            this.listeners.forEach(function (l) { return l.trigger(reason); });
         };
         /** Toggle a class attribute name in the document body */
         Application.prototype.toggleBodyClass = function (name, enabled) {
@@ -151,14 +179,9 @@ var Tesp;
         function Context(app) {
             var _this = this;
             this.app = app;
-            this.app.addChangeListener(function (reason) {
-                if (reason === Tesp.ChangeReason.SourceChange
-                    || reason === Tesp.ChangeReason.DestinationChange
-                    || reason === Tesp.ChangeReason.FeatureChange) {
-                    _this.findPath();
-                }
+            this.app.addChangeListener(Tesp.ChangeReason.ContextChange | Tesp.ChangeReason.MarkChange, function (reason) {
+                _this.findPath();
                 if (reason === Tesp.ChangeReason.MarkChange) {
-                    _this.findPath();
                     _this.app.toggleBodyClass("has-mark", _this.markNode != null);
                 }
             });
@@ -222,43 +245,30 @@ var Tesp;
 (function (Tesp) {
     /** Manages the context menu of the map */
     var ContextMenu = (function () {
-        function ContextMenu(app, element) {
+        function ContextMenu(app) {
             var _this = this;
             this.app = app;
-            this.element = element;
-            this.isOpen = false;
-            this.element.oncontextmenu = this.element.onmousedown = function (ev) { return ev.stopPropagation(); };
-            this.element.onclick = function (ev) {
-                ev.stopPropagation();
-                var item = event.target;
-                if (item.classList.contains("link")) {
-                    var context = item.dataset["contextSet"];
-                    if (context !== undefined) {
-                        var data = _this.element.dataset;
-                        var nodeId = data["nodeId"];
-                        var node;
-                        if (nodeId !== undefined && (node = _this.app.world.findNodeById(+nodeId)) != null) {
-                            _this.app.context.setContextNode(context, node);
-                        }
-                        else {
-                            _this.app.context.setContextLocation(context, new Tesp.Vec2(+data["posX"], +data["posY"]));
-                        }
-                    }
-                    else {
-                        context = item.dataset["contextUnset"];
-                        if (context !== undefined) {
-                            _this.app.context.clearContext(context);
-                        }
-                    }
-                    _this.hide();
-                }
-            };
+            this.menu = new Tesp.Menu(app, false);
+            this.links = [
+                Tesp.MenuItem.separator,
+                new Tesp.MenuItem("Navigate from here", function () { return _this.setContext("source"); }),
+                new Tesp.MenuItem("Navigate to here", function () { return _this.setContext("destination"); }),
+                new Tesp.MenuItem("Set Mark here", function () { return _this.setContext("mark"); })
+            ];
+            this.unmarkLink = new Tesp.MenuItem("Remove mark", function () { return _this.app.context.clearContext("mark"); });
         }
+        ContextMenu.prototype.setContext = function (context) {
+            if (this.node != null) {
+                this.app.context.setContextNode(context, this.node);
+            }
+            else {
+                this.app.context.setContextLocation(context, this.pos);
+            }
+        };
         ContextMenu.prototype.openNode = function (node) {
             this.open(node.pos, node);
         };
         ContextMenu.prototype.open = function (pos, node) {
-            var _this = this;
             // remove node if neither it or its reference are permanent
             if (node != null && !node.permanent) {
                 if (node.referenceId == null) {
@@ -294,33 +304,19 @@ var Tesp;
             if (region != null) {
                 lines.push(region + " Region");
             }
-            var separator = this.element.getElementsByClassName("separator")[0];
-            var child;
-            while ((child = this.element.firstElementChild) !== separator) {
-                this.element.removeChild(child);
-            }
-            lines.forEach(function (l) {
-                var item = document.createElement("li");
-                item.className = "link";
-                item.textContent = l;
-                _this.element.insertBefore(item, separator);
-            });
-            this.element.style.left = pos.x + "px";
-            this.element.style.top = pos.y + "px";
-            var data = this.element.dataset;
-            if (node != null) {
-                data["nodeId"] = node.id + "";
-                delete data["posX"];
-                delete data["posY"];
-            }
-            else {
-                data["posX"] = pos.x + "";
-                data["posY"] = pos.y + "";
-                delete data["nodeId"];
-            }
-            this.element.style.display = "inherit";
-            var scrollX = pageXOffset, scrollY = pageYOffset;
-            var rect = this.element.getBoundingClientRect();
+            this.pos = pos;
+            this.node = node;
+            var items = lines.map(function (l) { return new Tesp.MenuItem(l); }).concat(this.links);
+            if (this.app.context.markNode != null)
+                items.push(this.unmarkLink);
+            this.menu.setData(items);
+            this.menu.open();
+            var menuStyle = this.menu.getStyle();
+            menuStyle.left = pos.x + "px";
+            menuStyle.top = pos.y + "px";
+            var scrollX = pageXOffset;
+            var scrollY = pageYOffset;
+            var rect = this.menu.element.getBoundingClientRect();
             if (rect.left < 10) {
                 scrollX = pageXOffset + rect.left - 10;
             }
@@ -335,13 +331,9 @@ var Tesp;
             }
             if (scrollX !== pageXOffset || scrollY !== pageYOffset)
                 scroll(scrollX, scrollY);
-            this.isOpen = true;
         };
         ContextMenu.prototype.hide = function () {
-            if (this.isOpen) {
-                this.element.style.display = "none";
-                this.isOpen = false;
-            }
+            this.menu.hide();
         };
         return ContextMenu;
     })();
@@ -355,24 +347,28 @@ var Tesp;
             var _this = this;
             this.app = app;
             this.element = element;
-            this.app.addChangeListener(function (reason) {
-                if (reason === Tesp.ChangeReason.PathUpdate)
-                    _this.updatePath();
-                else if (reason === Tesp.ChangeReason.SourceChange)
-                    _this.updateNodeInfo(".control-source-info", _this.app.context.sourceNode);
-                else if (reason === Tesp.ChangeReason.DestinationChange)
-                    _this.updateNodeInfo(".control-destination-info", _this.app.context.destNode);
-                else if (reason === Tesp.ChangeReason.MarkChange)
-                    _this.updateNodeInfo(".control-mark-info", _this.app.context.markNode);
-            });
+            this.app.addChangeListener(Tesp.ChangeReason.SourceChange, function () { return _this.updateNodeInfo(".control-source-info", _this.app.context.sourceNode); });
+            this.app.addChangeListener(Tesp.ChangeReason.DestinationChange, function () { return _this.updateNodeInfo(".control-destination-info", _this.app.context.destNode); });
+            this.app.addChangeListener(Tesp.ChangeReason.MarkChange, function () { return _this.updateNodeInfo(".control-mark-info", _this.app.context.markNode); });
+            this.app.addChangeListener(Tesp.ChangeReason.PathUpdate, function () { return _this.updatePath(); });
             this.pathContainer = element.querySelector(".path-container");
             this.featuresContainer = element.querySelector(".features-container");
             this.searchInput = element.querySelector(".search-input");
-            this.searchBox = element.querySelector(".search-results");
             var featuresVisible = false;
             element.querySelector(".settings-icon").onclick = function () {
                 return _this.featuresContainer.style.display = (featuresVisible = !featuresVisible) ? "block" : "none";
             };
+            this.initSearch();
+        }
+        Controls.prototype.initSearch = function () {
+            var _this = this;
+            var searchContainer = this.element.querySelector(".search-container");
+            this.searchMenu = new Tesp.Menu(Tesp.app, true);
+            var menuStyle = this.searchMenu.getStyle();
+            var input = this.searchInput.getBoundingClientRect();
+            menuStyle.minWidth = "200px";
+            menuStyle.top = (input.top + input.height) + "px";
+            menuStyle.right = (searchContainer.clientWidth - input.right) + "px";
             function prepTerm(text) {
                 return text != null ? text.toLowerCase().replace(/[^a-z]+/g, " ") : null;
             }
@@ -381,22 +377,35 @@ var Tesp;
                 .map(function (n) {
                 var feat = _this.app.features.byName[n.type];
                 var featName = feat != null ? feat.location || feat.name : null;
+                var terms = [n.name];
+                if (featName != null)
+                    terms.push(featName);
+                var landmark = _this.app.world.getLandmarkName(n.pos);
+                if (landmark && landmark !== n.name)
+                    terms.push(landmark);
                 return {
-                    name: prepTerm(n.name),
-                    location: prepTerm(featName),
-                    node: n,
-                    feature: featName
+                    terms: terms,
+                    searchTerms: terms.map(function (t) { return prepTerm(t); }),
+                    node: n
                 };
             })
-                .sort(function (a, b) { return a.name.localeCompare(b.name); })
-                .sort(function (a, b) { return (a.location || "").localeCompare(b.location || ""); });
+                .sort(function (a, b) {
+                var at = a.searchTerms, bt = b.searchTerms;
+                var ml = Math.max(at.length, bt.length);
+                for (var i = 0; i < ml; i++) {
+                    var d = (at[i] || "").localeCompare(bt[i] || "");
+                    if (d !== 0)
+                        return d;
+                }
+                return 0;
+            });
             this.drawFeatures();
             this.searchInput.oninput = function () {
-                var child;
-                while ((child = _this.searchBox.firstElementChild) != null) {
-                    _this.searchBox.removeChild(child);
-                }
                 var search = _this.searchInput.value.toLowerCase();
+                if (search === "") {
+                    _this.searchMenu.hide();
+                    return;
+                }
                 var starts = [];
                 var terms = [];
                 var alpha = false;
@@ -420,38 +429,34 @@ var Tesp;
                     .filter(function (n) {
                     var c = 0;
                     return terms.some(function (t) {
-                        if (n.name.indexOf(t) === 0 || n.location != null && n.location.indexOf(t) === 0)
+                        if (n.searchTerms.some(function (st) { return st.indexOf(t) === 0; }))
                             c++;
                         return c >= starts.length;
                     });
                 });
-                _this.searchBox.style.display = results.length > 0 ? "inherit" : "none";
-                results.forEach(function (n) {
-                    var item = document.createElement("li");
-                    item.className = "link";
-                    item.textContent = n.feature ? n.node.name + ", " + n.feature : n.node.name;
-                    item.onclick = function () {
-                        _this.app.menu.openNode(n.node);
+                _this.searchMenu.setData(results.map(function (n) {
+                    return new Tesp.MenuItem(n.terms.join(", "), function () {
+                        _this.app.ctxMenu.openNode(n.node);
                         _this.clearSearch();
-                    };
-                    item.onmousedown = function (ev) { return ev.stopPropagation(); };
-                    _this.searchBox.appendChild(item);
-                });
-                var input = _this.searchInput.getBoundingClientRect();
-                _this.searchBox.style.top = (input.top + input.height) + "px";
-                _this.searchBox.style.left = input.left + "px";
+                    });
+                }));
+                _this.searchMenu.open();
             };
-        }
+            this.app.addChangeListener(Tesp.ChangeReason.ClearMenus, function () {
+                if (document.activeElement !== _this.searchInput)
+                    return _this.clearSearch();
+            });
+        };
         Controls.prototype.clearSearch = function () {
             this.searchInput.value = "";
-            this.searchBox.style.display = "none";
+            this.searchMenu.hide();
         };
         Controls.prototype.updateNodeInfo = function (selector, node) {
             var _this = this;
             var el = this.element.querySelector(selector);
             if (node != null) {
                 el.textContent = node.longName;
-                el.onclick = function () { return _this.app.menu.openNode(node); };
+                el.onclick = function () { return _this.app.ctxMenu.openNode(node); };
             }
             else {
                 el.textContent = "";
@@ -509,7 +514,7 @@ var Tesp;
             el.appendChild(document.createTextNode(text));
             var a = document.createElement("a");
             a.textContent = linkText;
-            a.onclick = function () { return _this.app.menu.openNode(node); };
+            a.onclick = function () { return _this.app.ctxMenu.openNode(node); };
             el.appendChild(a);
             return el;
         };
@@ -586,18 +591,11 @@ var Tesp;
             var _this = this;
             this.app = app;
             this.element = element;
-            this.app.addChangeListener(function (reason) {
-                if (reason === Tesp.ChangeReason.PathUpdate)
-                    _this.renderPath();
-                else if (reason === Tesp.ChangeReason.SourceChange)
-                    _this.renderSource();
-                else if (reason === Tesp.ChangeReason.DestinationChange)
-                    _this.renderDestination();
-                else if (reason === Tesp.ChangeReason.MarkChange)
-                    _this.renderMark();
-                else if (reason === Tesp.ChangeReason.FeatureChange)
-                    _this.updateFeatures();
-            });
+            this.app.addChangeListener(Tesp.ChangeReason.SourceChange, function () { return _this.renderSource(); });
+            this.app.addChangeListener(Tesp.ChangeReason.DestinationChange, function () { return _this.renderDestination(); });
+            this.app.addChangeListener(Tesp.ChangeReason.MarkChange, function () { return _this.renderMark(); });
+            this.app.addChangeListener(Tesp.ChangeReason.PathUpdate, function () { return _this.renderPath(); });
+            this.app.addChangeListener(Tesp.ChangeReason.FeatureChange, function () { return _this.updateFeatures(); });
             element.onclick = function (ev) {
                 var node = _this.getEventNode(ev);
                 if (node != null) {
@@ -627,7 +625,7 @@ var Tesp;
             return null;
         };
         Map.prototype.triggerContextMenu = function (ev, node) {
-            this.app.menu.open(new Tesp.Vec2(ev.pageX, ev.pageY), node || this.getEventNode(ev));
+            this.app.ctxMenu.open(new Tesp.Vec2(ev.pageX, ev.pageY), node || this.getEventNode(ev));
         };
         Map.prototype.initDragScroll = function () {
             var _this = this;
@@ -804,6 +802,83 @@ var Tesp;
         return Map;
     })();
     Tesp.Map = Map;
+})(Tesp || (Tesp = {}));
+var Tesp;
+(function (Tesp) {
+    var MenuItem = (function () {
+        function MenuItem(label, func) {
+            this.label = label;
+            this.func = func;
+        }
+        MenuItem.separator = new MenuItem("");
+        return MenuItem;
+    })();
+    Tesp.MenuItem = MenuItem;
+    var Menu = (function () {
+        function Menu(app, fixed) {
+            var _this = this;
+            this.app = app;
+            this.disposed = false;
+            this.listener = this.app.addChangeListener(Tesp.ChangeReason.ClearMenus, function () { return _this.hide(); });
+            this.element = document.createElement("ul");
+            this.element.className = "menu";
+            if (fixed)
+                this.element.classList.add("fixed");
+            this.element.onmousedown = function (ev) { return ev.stopPropagation(); };
+            this.app.element.appendChild(this.element);
+        }
+        Menu.prototype.dispose = function () {
+            if (this.disposed)
+                return;
+            this.app.removeChangeListener(this.listener);
+            this.element.parentElement.removeChild(this.element);
+            this.disposed = true;
+        };
+        Menu.prototype.getStyle = function () {
+            return this.disposed ? null : this.element.style;
+        };
+        Menu.prototype.setData = function (items) {
+            var _this = this;
+            if (this.disposed)
+                return;
+            this.hide();
+            var child;
+            while ((child = this.element.firstElementChild) != null) {
+                this.element.removeChild(child);
+            }
+            items.forEach(function (item) {
+                var li = document.createElement("li");
+                _this.element.appendChild(li);
+                if (item === MenuItem.separator) {
+                    li.className = "separator";
+                }
+                else {
+                    li.textContent = item.label;
+                    if (item.func != null) {
+                        li.className = "link";
+                        li.onmousedown = function (ev) {
+                            ev.stopPropagation();
+                            item.func();
+                            _this.hide();
+                        };
+                    }
+                }
+            });
+        };
+        Menu.prototype.open = function () {
+            if (this.disposed)
+                return;
+            this.app.triggerChange(Tesp.ChangeReason.ClearMenus);
+            this.element.style.display = "inherit";
+        };
+        Menu.prototype.hide = function () {
+            if (this.disposed)
+                return;
+            this.element.style.display = "none";
+        };
+        return Menu;
+    })();
+    Tesp.Menu = Menu;
 })(Tesp || (Tesp = {}));
 var Tesp;
 (function (Tesp) {
