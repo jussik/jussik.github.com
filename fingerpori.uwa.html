@@ -28,13 +28,16 @@
 				},
                 showComic: function(page) {
 					try {
-						var src = (new DOMParser).parseFromString(page, 'text/html').querySelector('figure.cartoon>img').src;
+						var img = (new DOMParser).parseFromString(page, 'text/html')
+							.querySelector('figure.cartoon>img');
+						if(!img)
+							throw new Error("Could not locate image in DOM.");
 						widget.setBody({
 							tag: 'a',
 							href: 'http://www.hs.fi/fingerpori/',
 							html: {
 								tag: 'img',
-								src: src,
+								src: img.src,
 								alt: 'Fingerpori',
 								styles: {
 									maxWidth: '100%',
