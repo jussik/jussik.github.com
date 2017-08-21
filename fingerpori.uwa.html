@@ -28,7 +28,7 @@
 				},
                 showComic: function(page) {
 					try {
-						var src = (new DOMParser).parseFromString(page, 'text/html').querySelector('#full-comic>div>img').src;
+						var src = (new DOMParser).parseFromString(page, 'text/html').querySelector('figure.cartoon>img').src;
 						widget.setBody({
 							tag: 'a',
 							href: 'http://www.hs.fi/fingerpori/',
