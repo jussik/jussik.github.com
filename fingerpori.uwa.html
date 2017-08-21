@@ -30,7 +30,7 @@
 					try {
 						var img = (new DOMParser).parseFromString(page, 'text/html')
 							.querySelector('figure.cartoon>img');
-						if(!img)
+						if(!img || !img.src)
 							throw new Error("Could not locate image in DOM.");
 						widget.setBody({
 							tag: 'a',
