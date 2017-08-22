@@ -30,14 +30,18 @@
 					try {
 						var img = (new DOMParser).parseFromString(page, 'text/html')
 							.querySelector('figure.cartoon>picture>source');
-						if(!img || !img.srcset)
+						var src = img && img.dataset.srcset;
+						if(!src)
 							throw new Error("Could not locate image in DOM.");
+						var sp = src.indexOf(' ');
+						if(sp !== -1)
+							src = src.substr(0, sp);
 						widget.setBody({
 							tag: 'a',
 							href: 'http://www.hs.fi/fingerpori/',
 							html: {
 								tag: 'img',
-								src: img.srcset,
+								src: img.dataset.srcset,
 								alt: 'Fingerpori',
 								styles: {
 									maxWidth: '100%',
