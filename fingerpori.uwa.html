@@ -29,15 +29,15 @@
                 showComic: function(page) {
 					try {
 						var img = (new DOMParser).parseFromString(page, 'text/html')
-							.querySelector('figure.cartoon>img');
-						if(!img || !img.dataset.original)
+							.querySelector('figure.cartoon>picture>source');
+						if(!img || !img.srcset)
 							throw new Error("Could not locate image in DOM.");
 						widget.setBody({
 							tag: 'a',
 							href: 'http://www.hs.fi/fingerpori/',
 							html: {
 								tag: 'img',
-								src: img.dataset.original,
+								src: img.srcset,
 								alt: 'Fingerpori',
 								styles: {
 									maxWidth: '100%',
