@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Pizze!</title>
+    <link rel="shortcut icon" href="favicon.png"/>
+    <style id="stylesContainer">
+        html { height: 100%; }
+        body {
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            margin: 0;
+        }
+        h1 {
+            margin: 10px;
+            letter-spacing: -4px;
+            color: #f84;
+        }
+        .stroke {
+            /*-webkit-text-stroke: 2px black;*/
+            text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+        }
+        #resHeaders {
+            margin-top: 1em;
+        }
+        #resNames {
+            display: inline-block;
+        }
+        #toppingsContainer {
+            flex-shrink: 1;
+            overflow: auto;
+        }
+        .other-names {
+            color: #aaa;
+            max-width: 200px;
+            overflow: hidden;
+        }
+        .tag {
+            font-size: 80%;
+            padding: 3px;
+            margin: 0 3px;
+            vertical-align: 2px;
+            text-transform: uppercase;
+            font-family: monospace;
+            border-radius: 3px;
+            cursor: pointer;
+            user-select: none;
+            box-shadow: inset black -1px -1px 1px, inset white 1px 1px 1px;
+        }
+        #toppingsContainer .tag { padding-right: 5px; }
+        .tag::before { padding-right: 3px; }
+
+        .res-container { display: inline-block; cursor: default; }
+        .res-box { display: inline-block; background: #ddd; width: 8px; }
+        .res-box.available { background: #4d4; }
+
+        .topping { overflow: hidden; }
+
+        #summary { border-collapse: collapse; }
+        #summaryHeader td {
+            font-weight: bold;
+            border-bottom: 1px solid black;
+        }
+        #summaryHeader td:first-of-type { width: 20px; }
+
+        .topping label { color: #ddd; }
+        #resNames > div { display: none; }
+        #summary td { display: none; }
+
+        #summary td:first-of-type {
+            display: table-cell;
+            text-align: center;
+            cursor: pointer;
+        }
+        #summary tbody tr:nth-child(odd) { background-color: #eee; }
+    </style>
+</head>
+<body class="not-nope">
+<h1>🍕 <span class="stroke">Pizze!</span></h1>
+<div id="filtersContainer"></div>
+<div>
+    <div id="resHeaders" class="res-container"></div>
+    <div id="resNames"></div>
+</div>
+<div id="toppingsContainer"></div>
+<table id="summary" style="display:none">
+    <thead>
+        <tr id="summaryHeader">
+            <td></td>
+        </tr>
+    </thead>
+    <tbody id="summaryTable"></tbody>
+</table>
+<script>
+(async function() {
+    "use strict";
+    const response = await fetch("data.json");
+    const data = await response.json();
+
+    const canonicalNames = {};
+    data.synonyms.forEach(synList => {
+        const first = synList[0];
+        for (let i = 1; i < synList.length; i++) {
+            canonicalNames[synList[i]] = first;
+        }
+    });
+
+    // tags
+    const sheet = document.styleSheets[0];
+    data.tagDefs.forEach(tagDef => {
+        const tag = tagDef.tag;
+        const color = tagDef.fg ? `color: ${tagDef.fg}; ` : "";
+        sheet.insertRule(`.tag.${tag} { background-color: ${tagDef.bg}; ${color}}`);
+        sheet.insertRule(`.tag.${tag}::before { content: "${tagDef.icon}"; }`);
+        sheet.insertRule(`body.not-${tag} .topping.${tag}, body[data-filter=${tag}] .topping:not(.${tag}) { display: none }`);
+        sheet.insertRule(`body[data-filter=${tag}] .tag.${tag} { box-shadow: inset black 1px 1px 1px }`);
+        sheet.insertRule(`body.not-${tag} .tag.${tag} { opacity: 0.5; box-shadow: none; }`);
+
+        const elem = document.createElement("span");
+        elem.classList.add("tag");
+        elem.classList.add(tag);
+        elem.dataset.tag = tag;
+        elem.textContent = tag + " ";
+
+        const remove = document.createElement("span");
+        remove.textContent = "❌";
+        remove.addEventListener("click", ev => {
+            if (document.body.classList.toggle("not-" + tag) && document.body.dataset.filter === tag) {
+                delete document.body.dataset.filter;
+            }
+            ev.stopPropagation();
+        });
+        elem.appendChild(remove);
+
+        filtersContainer.appendChild(elem);
+    });
+
+    // restaurants
+    const allRestaurants = Object.keys(data.toppings).sort();
+    allRestaurants.forEach((res, i) => {
+        sheet.insertRule(`body[data-res-col="${i}"]:not(.no-res-${i}) .res-box.index-${i} { background: #aaa; }`);
+        sheet.insertRule(`body[data-res-col="${i}"]:not(.no-res-${i}) .res-box.available.index-${i} { background: #1a1; }`);
+        sheet.insertRule(`body[data-res-col="${i}"]:not(.no-res-${i}) #resNames > .res-${i} { display: inline-block; }`);
+        sheet.insertRule(`body.no-res-${i} .res-box.index-${i} { background: #f8f8f8; }`);
+        sheet.insertRule(`body.no-res-${i} .res-box.available.index-${i} { background: #d4f7d4; }`);
+        sheet.insertRule(`body.res-${i} .topping.res-${i} label { color: black; }`);
+        sheet.insertRule(`body.res-${i} #summary td:nth-of-type(${i+2}) { display: table-cell; }`);
+        
+        document.body.classList.add("res-" + i);
+        
+        const resBox = document.createElement("div");
+        resBox.className = "res-box available";
+        resBox.innerHTML = "&nbsp;";
+        resBox.dataset.index = i;
+        resBox.classList.add("index-" + i);
+        resHeaders.appendChild(resBox);
+
+        const resName = document.createElement("div");
+        resName.textContent = " " + res;
+        resName.classList = "res-" + i;
+        resNames.appendChild(resName);
+
+        const header = document.createElement("td");
+        header.textContent = res;
+        summaryHeader.appendChild(header);
+    });
+
+    function handleResHover(elem) {
+        elem.addEventListener("mouseover", ev => document.body.dataset.resCol = ev.target.dataset.index, true);
+        elem.addEventListener("mouseout", () => delete document.body.dataset.resCol, true);
+    }
+    handleResHover(resHeaders);
+
+    // process topping data
+    const allToppings = [];
+    const toppingsByKey = {};
+    for (let res in data.toppings) {
+        const toppingList = data.toppings[res];
+        toppingList.forEach(name => {
+            // ensure name has first char uppercase
+            name = name.replace(/^([a-z])/, m => m.toUpperCase());
+            // key is lowercase without numbers or punctuation
+            let key = name.toLowerCase()
+                .replace(/[^a-zäö]|(?:^(?:tuore|tupla|vihreä) *)/g, "");
+            const canonical = canonicalNames[key];
+            key = canonical || key;
+            let topping = toppingsByKey[key];
+            if (!topping) {
+                topping = {
+                    key,
+                    // if canonical exists then name is not primary
+                    name: !canonical ? name : null,
+                    names: [name],
+                    tags: data.tags[key],
+                    byRestaurant: { [res]: name },
+                    restaurants: [res]
+                };
+                toppingsByKey[key] = topping;
+                allToppings.push(topping);
+            } else {
+                topping.restaurants.push(res);
+                if (topping.byRestaurant[res])
+                    topping.byRestaurant[res] += ", " + name;
+                else
+                    topping.byRestaurant[res] = name;
+                if (topping.names.indexOf(name) === -1)
+                    topping.names.push(name);
+                if (!canonical && !topping.name)
+                    topping.name = name;
+            }
+        });
+    }
+
+    // create topping elements
+    allToppings.forEach(topping => {
+        topping.names.sort((a, b) => {
+            if (a === topping.name)
+                return -1;
+            if (b === topping.name)
+                return 1;
+            return a.localeCompare(b);
+        });
+    });
+    allToppings.sort((a, b) => a.names[0].localeCompare(b.names[0]));
+    allToppings.forEach(topping => {
+        const li = document.createElement("div");
+        li.className = "topping";
+        li.dataset.key = topping.key;
+
+        const resContainer = document.createElement("div");
+        handleResHover(resContainer);
+        resContainer.className = "res-container";
+        li.appendChild(resContainer);
+        allRestaurants.forEach((res, i) => {
+            const resBox = document.createElement("div");
+            resBox.className = "res-box";
+            if (topping.restaurants.includes(res)) {
+                resBox.classList.add("available");
+                li.classList.add("res-" + i);
+            }
+            resBox.innerHTML = "&nbsp;";
+            resBox.dataset.index = i;
+            resBox.classList.add("index-" + i);
+            resContainer.appendChild(resBox);
+        });
+
+        const check = document.createElement("input");
+        check.type = "checkbox";
+
+        const name = document.createElement("label");
+        name.appendChild(check);
+        name.appendChild(document.createTextNode(" " + topping.names[0]));
+        li.appendChild(name);
+
+        if (topping.tags) {
+            topping.tags.forEach(t => {
+                li.classList.add(t);
+
+                const tag = document.createElement("span");
+                tag.classList.add("tag");
+                tag.classList.add(t);
+                tag.dataset.tag = t;
+                tag.type = "text";
+                tag.textContent = t;
+                li.appendChild(tag);
+            });
+        }
+
+        if (topping.names.length > 1) {
+            const otherNames = document.createElement("span");
+            otherNames.className = "other-names";
+            otherNames.textContent = " | " + topping.names.slice(1).join(" | ");
+            li.appendChild(otherNames);
+        }
+
+        toppingsContainer.appendChild(li);
+    });
+
+    // click on tags
+    document.addEventListener("click", ev => {
+        const tag = ev.target.dataset.tag;
+        if (tag) {
+            if (document.body.dataset.filter === tag) {
+                delete document.body.dataset.filter;
+            } else {
+                document.body.dataset.filter = tag;
+                document.body.classList.remove("not-" + tag);
+            }
+        }
+    });
+
+    // enable/disable toppings
+    document.addEventListener("change", () => {
+        const selected = [].map.call(toppingsContainer.querySelectorAll(":checked"),
+            ch => toppingsByKey[ch.parentElement.parentElement.dataset.key]);
+        const resMap = {};
+        allRestaurants.forEach((res, i) => {
+            const has = selected.every(t => t.restaurants.includes(res));
+            document.body.classList.toggle("res-" + i, has);
+            document.body.classList.toggle("no-res-" + i, !has);
+            if (has)
+                resMap[res] = true;
+        });
+
+        // summary table
+        while (summaryTable.firstChild) {
+            summaryTable.removeChild(summaryTable.firstChild);
+        }
+        summary.style.display = selected.length > 0 ? "" : "none";
+        selected.forEach(t => {
+            const tr = document.createElement("tr");
+
+            const rem = document.createElement("td");
+            rem.textContent = "❌";
+            rem.addEventListener("click", () => {
+                const check = toppingsContainer.querySelector(".topping[data-key=" + t.key + "] input");
+                check.checked = false;
+                check.dispatchEvent(new Event("change", { bubbles: true }));
+            });
+            tr.appendChild(rem);
+            
+            allRestaurants.forEach(res => {
+                const td = document.createElement("td");
+                td.textContent = t.byRestaurant[res] || "";
+                tr.appendChild(td);
+            });
+
+            summaryTable.appendChild(tr);
+        });
+    });
+})();
+</script>
+</body>
+</html>
