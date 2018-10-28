@@ -234,7 +234,11 @@
         // header cells
         summaryColumns.forEach(sum => {
             const td = document.createElement("td");
-            td.textContent = sum.restaurant.name;
+            const a = document.createElement("a");
+            a.textContent = sum.restaurant.name;
+            a.href = sum.restaurant.url;
+            a.target = "_blank";
+            td.appendChild(a);
             summaryHeader.appendChild(td);
         });
 
