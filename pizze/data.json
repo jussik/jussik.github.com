@@ -6,6 +6,12 @@
       "icon": "🥩"
     },
     {
+      "tag": "fish",
+      "bg": "#44f",
+      "fg": "white",
+      "icon": "🐟"
+    },
+    {
       "tag": "veg",
       "bg": "#8e8",
       "icon": "🍆"
@@ -49,15 +55,8 @@
       "icon": "🌿"
     },
     {
-      "tag": "fish",
-      "bg": "#44f",
-      "fg": "white",
-      "icon": "🐟"
-    },
-    {
       "tag": "nope",
-      "bg": "#888",
-      "fg": "white",
+      "bg": "#bdd",
       "icon": "💩"
     }
   ],
@@ -104,7 +103,7 @@
   "tags": {
     "americankastike": [ "sauce" ],
     "ananas": [ "veg", "sweet" ],
-    "anjovis": [ "fish", "nope" ],
+    "anjovis": [ "fish" ],
     "aurajuusto": [ "cheese", "nope" ],
     "aurinkokuivattutomaatti": [ "veg" ],
     "avokado": [ "veg" ],
