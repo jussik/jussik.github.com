@@ -32,11 +32,12 @@
             flex-shrink: 1;
             overflow: auto;
         }
-        .other-names {
-            color: #aaa;
-            max-width: 200px;
+
+        .topping {
             overflow: hidden;
+            white-space: nowrap;
         }
+        .other-names { color: #aaa; }
         .tag {
             font-size: 80%;
             padding: 3px;
@@ -52,11 +53,14 @@
         #toppingsContainer .tag { padding-right: 5px; }
         .tag::before { padding-right: 3px; }
 
-        .res-container { display: inline-block; cursor: default; }
+        .res-container {
+            display: inline-block;
+            cursor: default;
+            vertical-align: top;
+            line-height: 21px;
+        }
         .res-box { display: inline-block; background: #ddd; width: 8px; }
         .res-box.available { background: #4d4; }
-
-        .topping { overflow: hidden; }
 
         #summaryContainer {
             overflow: auto;
