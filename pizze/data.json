@@ -64,20 +64,22 @@
   "synonyms": [
     [ "americankastike", "americanokastike", "amerikankastike", "talonamericanokastike" ],
     [ "aurajuusto", "sinihomejuusto", "vegaaninensinihomejuusto" ],
-    [ "barbequekastike", "bbqkastike" ],
+    [ "barbequekastike", "bbqkastike", "barbaquekastike" ],
     [ "chorizo", "chorizomakkara" ],
     [ "feta", "fetajuusto" ],
+    [ "cheddar", "cheddarjuusto" ],
     [ "herkkusieni", "sieni" ],
-    [ "hotsauce", "siipikastike", "sipikastike", "chilikastike", "texaspetekastike", "tulinenkastike" ],
-    [ "jalapeno", "jalopeno", "chili", "chilivihreä" ],
+    [ "chilikastike", "hotsauce", "siipikastike", "sipikastike", "texaspetekastike", "tulinenkastike", "hotkastike", "hotwingskastike", "siipiweikkokastike", "srirachakastike" ],
+    [ "chili", "jalapeno", "jalopeno", "chilivihreä", "spicyvihreäpaprika" ],
     [ "juusto", "extrajuusto", "vegaaninenjuusto" ],
-    [ "kana", "broileri", "paahdettubroileri" ],
+    [ "jauheliha", "maustettujauheliha" ],
+    [ "kana", "broileri", "paahdettubroileri", "shawarmakana" ],
     [ "kananmuna", "muna" ],
     [ "kastike", "kastikkeet", "talonkastike" ],
     [ "kebab", "kebabliha" ],
     [ "kesäkurpitsa", "grillattukesäkurpitsa" ],
     [ "kinkku", "kinkkua", "palvikinkku" ],
-    [ "majoneesi", "talonmajoneesikastike" ],
+    [ "majoneesi", "talonmajoneesikastike", "talonmajoneesi" ],
     [ "makkara", "naudanlihamakkara" ],
     [ "mexicanakastike", "mexicanokastike", "tacokastike" ],
     [ "mozzarella", "mozzarellajuusto", "mozzraellajuusto", "mozzarellacheddarsekoitus" ],
@@ -89,14 +91,15 @@
     [ "parsa", "tankoparsa" ],
     [ "pepperoni", "pepperonimakkara", "pepperonisalami", "pepporoni" ],
     [ "pesto", "pestokastike" ],
-    [ "punasipuli", "sipuli" ],
+    [ "sipuli", "punasipuli", "sipulli" ],
     [ "ranskalaiset", "ranskanperuna" ],
     [ "rucola", "rukola" ],
     [ "salami", "salamirouhe" ],
     [ "sipulirenkaita", "paneroitujasipulirenkaita", "sipulirenkaat" ],
-    [ "tomaatti", "tomaattiviipale" ],
+    [ "tomaatti", "tomaattiviipale", "tomaattisiivu" ],
     [ "turkinpippuri", "turkkilainenpippuri" ],
-    [ "vuohenjuusto", "vuohejuusto", "vuohenmaitojuusto" ]
+    [ "vuohenjuusto", "vuohejuusto", "vuohenmaitojuusto" ],
+    [ "katkarapu", "runsaastikatkarapuja" ]
   ],
   "tags": {
     "americankastike": [ "sauce" ],
@@ -108,7 +111,7 @@
     "banaani": [ "veg", "sweet" ],
     "barbequekastike": [ "sauce", "sweet" ],
     "basilika": [ "seasoning" ],
-    "cheddarjuusto": [ "cheese" ],
+    "cheddar": [ "cheese" ],
     "chorizo": [ "meat" ],
     "currykastike": [ "sauce" ],
     "edamjuusto": [ "cheese" ],
@@ -118,9 +121,9 @@
     "habanero": [ "veg", "hot" ],
     "herkkusieni": [ "veg", "nope" ],
     "herne": [ "veg" ],
-    "hotsauce": [ "sauce", "hot" ],
+    "chilikastike": [ "sauce", "hot" ],
     "jäävuorisalaatti": [ "veg" ],
-    "jalapeno": [ "veg", "hot" ],
+    "chili": [ "veg", "hot" ],
     "jättikatkaravut": [ "fish" ],
     "jauheliha": [ "meat" ],
     "jauhelihakastike": [ "meat", "sauce" ],
@@ -152,6 +155,7 @@
     "naudanliha": [ "meat" ],
     "makara": [ "meat" ],
     "oliivi": [ "veg" ],
+    "oliiviöljy": [ "sauce" ],
     "oregano": [ "seasoning" ],
     "paholaisenhillo": [ "sauce", "hot" ],
     "paprika": [ "veg" ],
@@ -162,10 +166,11 @@
     "pepperoni": [ "meat" ],
     "persikka": [ "veg", "sweet" ],
     "pesto": [ "sauce" ],
+    "pillimehu": [ "nope" ],
     "pinjansiemen": [ "seasoning" ],
     "pippurisekoitus": [ "seasoning" ],
     "poronliha": [ "meat" ],
-    "punasipuli": [ "veg" ],
+    "sipuli": [ "veg" ],
     "raejuusto": [ "cheese" ],
     "ranskalaiset": [ "fried" ],
     "ranskankerma": [ "sauce" ],
@@ -179,7 +184,6 @@
     "simpukka": [ "fish" ],
     "sipulirenkaita": [ "fried" ],
     "smetana": [ "sauce" ],
-    "spicyvihreäpaprika": [ "veg", "hot" ],
     "suolakurkku": [ "veg" ],
     "tabasco": [ "sauce" ],
     "tandorimauste": [ "seasoning" ],
@@ -196,797 +200,891 @@
     "vegaanikebab": [ "veg", "meat" ],
     "vuohenjuusto": [ "cheese" ]
   },
-  "toppings": {
-    "Etelän Kebab House": [
-      "Ananas",
-      "Anjovis",
-      "Aurajuusto",
-      "Aurinkokuivattu tomaatti",
-      "Aurinkokuivattutomaatti",
-      "Banaani",
-      "Basilika",
-      "BBQ-kastike",
-      "Chili",
-      "Chilikastike",
-      "Extrajuusto",
-      "Falafel",
-      "Fetajuusto",
-      "Herkkusieni",
-      "Jalapeno",
-      "Jalopeno",
-      "Jauheliha",
-      "Juusto",
-      "Kana",
-      "Kananmuna",
-      "Kapris",
-      "Katkarapu",
-      "Kebab",
-      "Kebab-liha",
-      "Kebabliha",
-      "Kinkku",
-      "Kirsikkatomaatti",
-      "Mozzarella",
-      "Mozzarellajuusto",
-      "Munakoiso",
-      "Naudanliha",
-      "Oliivi",
-      "Paprika",
-      "Parmankinkku",
-      "Parsa",
-      "Pekoni",
-      "Pepperoni",
-      "Pesto",
-      "Pestokastike",
-      "Pinjansiemen",
-      "Punasipuli",
-      "Rucola",
-      "Salami",
-      "Savulohi",
-      "Simpukka",
-      "Sinihomejuusto",
-      "Sipuli",
-      "Sipulirenkaat",
-      "Smetana",
-      "Suolakurkku",
-      "Texas Pete- kastike",
-      "Tomaatti",
-      "Tomaattikastike",
-      "Tonnikala",
-      "Tuore herkkusieni",
-      "Tuore Paprika",
-      "Tuore rucola",
-      "Tuplajuusto",
-      "Vuohenjuusto"
-    ],
-    "Mardin Tampere - Tammela": [
-      "Ananas",
-      "Aurajuusto",
-      "Aurinkokuivattu tomaatti",
-      "Avokado",
-      "Barbequekastike",
-      "Basilika",
-      "Broileri",
-      "Chili",
-      "Chorizomakkara",
-      "Currykastike",
-      "Etanoita",
-      "Falafel",
-      "Fetajuusto",
-      "Habanero",
-      "Häränsuikale",
-      "Herkkusieni",
-      "Herne",
-      "Jalopeno",
-      "Jättikatkaravut",
-      "Jauheliha",
-      "Kana",
-      "Kananmuna",
-      "Kastikkeet",
-      "Katkarapu",
-      "Kebab",
-      "Kebabliha",
-      "Kermakastike",
-      "Kinkku",
-      "Kirsikkatomaatti",
-      "Korianteri",
-      "Kurkku",
-      "Majoneesi",
-      "Mexicana-kastike",
-      "Mozzarella",
-      "Mozzarellajuusto",
-      "Musta oliivi",
-      "Mustapippuri",
-      "Mustekala",
-      "Naudan paahtopaisti",
-      "Oliivi",
-      "Oregano",
-      "Paprika",
-      "Parmankinkku",
-      "Parmesanjuusto",
-      "Parsa",
-      "Pekoni",
-      "Pepperoni",
-      "Pestokastike",
-      "Poronliha",
-      "Punasipuli",
-      "Raejuusto",
-      "Ranskankerma",
-      "Ricottajuusto",
-      "Rucola",
-      "Salami",
-      "Simpukka",
-      "Sipuli",
-      "Sipulirenkaita",
-      "Tabasco",
-      "Tankoparsa",
-      "Texaspete-kastike",
-      "Tonnikala",
-      "Tulinen kastike",
-      "Tuore korianteri",
-      "Tuore tomaattiviipale",
-      "Tuoretomaatti",
-      "Tuplajuusto",
-      "Turkinpippuri",
-      "Valkopippuri",
-      "Valkosipuli",
-      "Vihreä chili"
-    ],
-    "Fin Pizzeria": [
-      "Amerikankastike",
-      "Ananas",
-      "Aurajuusto",
-      "Aurinkokuivattu tomaatti",
-      "Barbequekastike",
-      "Cheddarjuusto",
-      "Chili",
-      "Currykastike",
-      "Falafel",
-      "Fetajuusto",
-      "Herkkusieni",
-      "Hot sauce",
-      "Jäävuorisalaatti",
-      "Jalapeno",
-      "Jalopeno",
-      "Jauheliha",
-      "Kana",
-      "Kananmuna",
-      "Katkarapu",
-      "Kebab-liha",
-      "Kebabliha",
-      "Kinkku",
-      "Kreikkalainen oliivi",
-      "Maustettu naudanliha",
-      "Mozzarellajuusto",
-      "Mustapippuri",
-      "Naudanliha",
-      "Oliivi",
-      "Paneroituja sipulirenkaita",
-      "Paprika",
-      "Parsa",
-      "Pekoni",
-      "Pepperoni",
-      "Persikka",
-      "Punasipuli",
-      "Salaatti",
-      "Salami",
-      "Siipikastike",
-      "Simpukka",
-      "Sipuli",
-      "Tacokastike",
-      "Tandorimauste",
-      "Tomaatti",
-      "Tonnikala",
-      "Tulinen kastike",
-      "Tuplajuusto",
-      "Tuplakatkarapu"
-    ],
-    "Kalevan Pizzeria": [
-      "Amerikankastike",
-      "Ananas",
-      "Aurajuusto",
-      "Aurinkokuivattu tomaatti",
-      "Barbequekastike",
-      "Cheddarjuusto",
-      "Chili",
-      "Currykastike",
-      "Falafel",
-      "Fetajuusto",
-      "Herkkusieni",
-      "Hot sauce",
-      "Jäävuorisalaatti",
-      "Jalapeno",
-      "Jalopeno",
-      "Jauheliha",
-      "Kana",
-      "Kananmuna",
-      "Katkarapu",
-      "Kebab-liha",
-      "Kebabliha",
-      "Kinkku",
-      "Kreikkalainen oliivi",
-      "Maustettu naudanliha",
-      "Mozzarellajuusto",
-      "Naudanliha",
-      "Oliivi",
-      "Paneroituja sipulirenkaita",
-      "Paprika",
-      "Parsa",
-      "Pekoni",
-      "Pepperoni",
-      "Persikka",
-      "Punasipuli",
-      "Salaatti",
-      "Salami",
-      "Siipikastike",
-      "Simpukka",
-      "Sipuli",
-      "Tacokastike",
-      "Tandorimauste",
-      "Tomaatti",
-      "Tonnikala",
-      "Tulinen kastike",
-      "Tuplajuusto",
-      "Tuplakatkarapu"
-    ],
-    "Kings Pizza": [
-      "Ananas",
-      "Aurajuusto",
-      "Chili",
-      "Fetajuusto",
-      "Herkkusieni",
-      "Jalopeno",
-      "Jauheliha",
-      "Jauhelihakastike",
-      "Juusto",
-      "Kana",
-      "Katkarapu",
-      "Kebab-liha",
-      "Kinkku",
-      "Naudanliha",
-      "Oliivi",
-      "Paprika",
-      "Pekoni",
-      "Pepperoni",
-      "Pepperonimakkara",
-      "Pippurisekoitus",
-      "Punasipuli",
-      "Salami",
-      "Sipuli",
-      "Tacokastike",
-      "Tomaatti",
-      "Tonnikala",
-      "Tuplajuusto"
-    ],
-    "Power Pizzeria": [
-      "Ananas",
-      "Aurajuusto",
-      "Aurinkokuivattu tomaatti",
-      "Basilika",
-      "Chili",
-      "Fetajuusto",
-      "Herkkusieni",
-      "Herne",
-      "Jäävuorisalaatti",
-      "Jauheliha",
-      "Juusto",
-      "Kana",
-      "Kananmuna",
-      "Katkarapu",
-      "Kebabliha",
-      "Kesäkurpitsa",
-      "Kinkku",
-      "Kirsikkatomaatti",
-      "Maissi",
-      "Makkara",
-      "Mozzarellajuusto",
-      "Musta oliivi",
-      "Oliivi",
-      "Paprika",
-      "Parmesan",
-      "Pekoni",
-      "Pepperoni",
-      "Punasipuli",
-      "Rukola",
-      "Salami",
-      "Simpukka",
-      "Sipuli",
-      "Spicy vihreä paprika",
-      "Tomaatti",
-      "Tonnikala",
-      "Tuore paprika",
-      "Tuore persilja",
-      "Tuore sitruuna",
-      "Tuplajuusto",
-      "Vuohejuusto",
-      "Vuohenjuusto"
-    ],
-    "Bell Pizza": [
-      "Ananas",
-      "Aurajuusto",
-      "Fetajuusto",
-      "Herkkusieni",
-      "Jalapeno",
-      "Jauheliha",
-      "Juusto",
-      "Kana",
-      "Kananmuna",
-      "Kapris",
-      "Katkarapu",
-      "Kebab",
-      "Kinkku",
-      "Mozzarella",
-      "Mustapippuri",
-      "Oliivi",
-      "Paprika",
-      "Parsa",
-      "Pekoni",
-      "Pepperoni",
-      "Salami",
-      "Simpukka",
-      "Sipuli",
-      "Tacokastike",
-      "Tomaatti",
-      "Tonnikala",
-      "Tuplajuusto",
-      "Vegaani kebab",
-      "Vegaaninen juusto",
-      "Vegaaninen sinihomejuusto"
-    ],
-    "Ristorante Capricciosa  Pyynikki": [
-      "americanokastike",
-      "Amerikan kastike",
-      "Ananas",
-      "aurajuusto",
-      "BBQ-kastike",
-      "chili",
-      "currykastike",
-      "Falafel",
-      "fetajuusto",
-      "Grillattu kesäkurpitsa",
-      "Grillattu munakoiso",
-      "Herkkusieni",
-      "jalapeno",
-      "jauheliha",
-      "Kana",
-      "Kananmuna",
-      "Kapris",
-      "katkarapu",
-      "Kebab",
-      "Kebabliha",
-      "kermakastike",
-      "kinkku",
-      "kinkkua",
-      "Majoneesi",
-      "Manchegojuusto",
-      "mexicanokastike",
-      "mozzarella",
-      "Mozzarellajuusto",
-      "Mozzraellajuusto",
-      "Naudanlihamakkara",
-      "oarsa",
-      "oliivi",
-      "Paprika",
-      "pekoni",
-      "pepperoni",
-      "persikka",
-      "Pesto",
-      "Poronliha",
-      "Punasipuli",
-      "Ranskalaiset",
-      "Salaatti",
-      "salami",
-      "simpukka",
-      "Sipikastike",
-      "Sipuli",
-      "smetana",
-      "Tacokastike",
-      "tomaatti",
-      "tonnikala",
-      "Tuore rucola",
-      "Tuore tomaatti",
-      "tuplajuusto",
-      "Tuplakatkarapu (+1,00 €)",
-      "Tuplapekoni (+1,00 €)",
-      "Turkkilainen pippuri",
-      "Valkosipulimajoneesi"
-    ],
-    "Pizzeria Kebab Drina": [
-      "Ananas",
-      "Aurajuusto",
-      "Chili",
-      "Fetajuusto",
-      "Herkkusieni",
-      "Jalapeno",
-      "Jalopeno",
-      "Jauheliha",
-      "Kana",
-      "Kananmuna",
-      "Katkarapu",
-      "Kebabliha",
-      "Kinkku",
-      "Musta oliivi",
-      "Mustapippuri",
-      "Naudanliha",
-      "Oliivi",
-      "Paprika",
-      "Pekoni",
-      "Pepperoni",
-      "Punasipuli",
-      "Rucola",
-      "Salami",
-      "Simpukka",
-      "Sinihomejuusto",
-      "Sipuli",
-      "Texas pete-kastike",
-      "Tomaatti",
-      "Tonnikala",
-      "Tuore tomaattiviipale",
-      "Tuplajuusto",
-      "Turkinpippuri"
-    ],
-    "Kalevan Pizzeria": [
-      "Amerikankastike",
-      "Ananas",
-      "Aurajuusto",
-      "Aurinkokuivattu tomaatti",
-      "Barbequekastike",
-      "Cheddarjuusto",
-      "Chili",
-      "Currykastike",
-      "Falafel",
-      "Fetajuusto",
-      "Herkkusieni",
-      "Hot sauce",
-      "Jäävuorisalaatti",
-      "Jalapeno",
-      "Jalopeno",
-      "Jauheliha",
-      "Kana",
-      "Kananmuna",
-      "Katkarapu",
-      "Kebab-liha",
-      "Kebabliha",
-      "Kinkku",
-      "Kreikkalainen oliivi",
-      "Maustettu naudanliha",
-      "Mozzarellajuusto",
-      "Naudanliha",
-      "Oliivi",
-      "Paneroituja sipulirenkaita",
-      "Paprika",
-      "Parsa",
-      "Pekoni",
-      "Pepperoni",
-      "Persikka",
-      "Punasipuli",
-      "Salaatti",
-      "Salami",
-      "Siipikastike",
-      "Simpukka",
-      "Sipuli",
-      "Tacokastike",
-      "Tandorimauste",
-      "Tomaatti",
-      "Tonnikala",
-      "Tulinen kastike",
-      "Tuplajuusto",
-      "Tuplakatkarapu"
-    ],
-    "Opera": [
-      "Ananas",
-      "Aurajuusto",
-      "Aurinkokuivattu tomaatti",
-      "BBQ-kastike",
-      "Broileri",
-      "Falafel",
-      "Fetajuusto",
-      "Herkkusieni",
-      "Jäävuorisalaatti",
-      "Jalapeno",
-      "Jauheliha",
-      "Kana",
-      "Kananmuna",
-      "Kapris",
-      "Katkarapu",
-      "Kebabliha",
-      "Kinkku",
-      "Maissi",
-      "Majoneesi",
-      "Mozzarella",
-      "Mozzarellajuusto",
-      "Oliivi",
-      "Paahdettu broileri",
-      "Paholaisenhillo",
-      "Paprika",
-      "Parsa",
-      "Pekoni",
-      "Pepperonimakkara",
-      "Persikka",
-      "Poronliha (+1,00 €)",
-      "Punasipuli",
-      "Ranskanperuna",
-      "Rucola",
-      "Salami",
-      "Salamirouhe",
-      "Siipikastike",
-      "Simpukka",
-      "Smetana",
-      "Tacokastike",
-      "Talon majoneesikastike",
-      "Texas Pete-kastike",
-      "Tomaatti",
-      "Tonnikala",
-      "Tuore tomaatti",
-      "Valkosipulimajoneesi",
-      "Vuohenjuusto"
-    ],
-    "Go Go Pizza": [
-      "Ananas",
-      "Aurajuusto",
-      "Barbequekastike",
-      "Chorizomakkara",
-      "Fetajuusto",
-      "Herkkusieni",
-      "Herne",
-      "Jäävuorisalaatti",
-      "Jalapeno",
-      "Jalopeno",
-      "Jauheliha",
-      "Kana",
-      "Kananmuna",
-      "Kapris",
-      "Katkarapu",
-      "Kebabliha",
-      "Kinkku",
-      "Maissi",
-      "Majoneesi",
-      "Mozzarellajuusto",
-      "Naudan paahtopaisti",
-      "Oliivi",
-      "Paprika",
-      "Parsa",
-      "Pekoni",
-      "Pepperoni",
-      "Punasipuli",
-      "Salami",
-      "Siipikastike",
-      "Simpukka",
-      "Tomaatti",
-      "Tonnikala",
-      "Tuplajuusto",
-      "Tuplapaksu pizzapohja",
-      "Vihreä basilika",
-      "Vihreä rucola",
-      "Vuohenmaitojuusto"
-    ],
-    "Pizza Service - Amuri": [
-      "Ananas",
-      "Aurajuusto",
-      "Chili",
-      "Feta",
-      "Fetajuusto",
-      "Herkkusieni",
-      "Jäävuorisalaatti",
-      "Jalapeno",
-      "Jalopeno",
-      "Jauheliha",
-      "Juusto",
-      "Kana",
-      "Kananmuna",
-      "Kapris",
-      "Katkarapu",
-      "Kebab",
-      "Kebabliha",
-      "Kinkku",
-      "Kurkku",
-      "Maustettu naudanliha",
-      "Mozzarella",
-      "Mozzarella-cheddar sekoitus",
-      "Muna",
-      "Naudanliha",
-      "Oliivi",
-      "Paprika",
-      "Parsa",
-      "Pekoni",
-      "Pepperoni",
-      "Pepporoni",
-      "Salami",
-      "Simpukka",
-      "Sipuli",
-      "Tacokastike",
-      "Tomaatti",
-      "Tonnikala",
-      "Tuplajuusto"
-    ],
-    "Pizzeria Eiffel": [
-      "Americankastike",
-      "Ananas",
-      "Aurajuusto",
-      "Chili",
-      "Currykastike",
-      "Fetajuusto",
-      "Herkkusieni",
-      "Jalopeno",
-      "Jauheliha",
-      "Juusto",
-      "Kana",
-      "Kastike",
-      "Katkarapu",
-      "Kebab-liha",
-      "Kebabliha",
-      "Kinkku",
-      "Mozzarellajuusto",
-      "Naudanliha",
-      "Oliivi",
-      "Paprika",
-      "Pekoni",
-      "Pepperoni",
-      "Salami",
-      "Simpukka",
-      "Sipuli",
-      "Tomaatti",
-      "Tonnikala",
-      "Tupla pepperoni",
-      "Tuplajuusto",
-      "Tuplakatkarapu"
-    ],
-    "La Toore": [
-      "Ananas",
-      "Anjovis",
-      "Aurajuusto",
-      "Fetajuusto",
-      "Herkkusieni",
-      "Jalopeno",
-      "Jauheliha",
-      "Kana",
-      "Kapris",
-      "Katkarapu",
-      "Kebab-liha",
-      "Kinkku",
-      "Oliivi",
-      "Paprika",
-      "Parsa",
-      "Pepperoni",
-      "Salami",
-      "Simpukka",
-      "Sipuli",
-      "Tomaatti",
-      "Tonnikala"
-    ],
-    "Nupelda": [
-      "Americano kastike",
-      "Ananas",
-      "Aurajuusto",
-      "Aurinkokuivattu tomaatti",
-      "Barbequekastike",
-      "BBQ-kastike",
-      "Chili",
-      "Chorizo",
-      "Edamjuusto",
-      "Fetajuusto",
-      "Grillattu kesäkurpitsa",
-      "Grillattu munakoiso",
-      "Herkkusieni",
-      "Jalopeno",
-      "Jauheliha",
-      "Juusto",
-      "Kana",
-      "Kananmuna",
-      "Kapris",
-      "Katkarapu",
-      "Kebabliha",
-      "Kermakastike",
-      "Kinkku",
-      "Koskenlaskijajuusto",
-      "Kurpitsa",
-      "Mozzarella",
-      "Mozzarellajuusto",
-      "Munakoiso",
-      "Oliivi",
-      "Palvikinkku",
-      "Parmesanjuusto",
-      "Pekoni",
-      "Pepperoni",
-      "Pesto",
-      "Punasipuli",
-      "Revitty possu",
-      "Rucola",
-      "Salami",
-      "Siipikastike",
-      "Simpukka",
-      "Sipuli",
-      "Smetana",
-      "Talon Americanokastike",
-      "Talonkastike",
-      "Tomaatti",
-      "Tomaattikastike",
-      "Tonnikala",
-      "Tuore basilika",
-      "Tuore herkkusieni",
-      "Tuore paprika",
-      "Tuore parsa",
-      "Tuore tomaatti",
-      "Tuoretomaatti",
-      "Tuplajuusto"
-    ],
-    "Rozerin Pizza & Kebab": [
-      "Ananas",
-      "Aurajuusto",
-      "Chili",
-      "Chili [vihreä],",
-      "Extrajuusto",
-      "Fetajuusto",
-      "Herkkusieni",
-      "Jalopeno",
-      "Jauheliha",
-      "Kana",
-      "Kananmuna",
-      "Katkarapu",
-      "Kebab-liha",
-      "Kinkku",
-      "Oliivi",
-      "Paprika",
-      "Pekoni",
-      "Pepperoni",
-      "Pepperonisalami",
-      "Salami",
-      "Simpukka",
-      "Sipuli",
-      "Tacokastike",
-      "Tomaatti",
-      "Tonnikala",
-      "Valkosipuli"
-    ],
-    "Koikkari": [
-      "Ananas",
-      "Aurajuusto",
-      "Chili",
-      "Fetajuusto",
-      "Herkkusieni",
-      "Jauheliha",
-      "Kana",
-      "Katkarapu",
-      "Kebabliha",
-      "Kinkku",
-      "Mozzarellajuusto",
-      "Oliivi",
-      "Paprika",
-      "Pekoni",
-      "Pepperoni",
-      "Salami",
-      "Sieni",
-      "Sipuli",
-      "Tomaatti",
-      "Tonnikala"
-    ],
-    "Pizzacity": [
-      "Ananas",
-      "Aurajuusto",
-      "Chili",
-      "Extrajuusto",
-      "Herkkusieni",
-      "Jalapeno",
-      "Jalopeno",
-      "Jauheliha",
-      "Juusto",
-      "Kana",
-      "Katkarapu",
-      "Kebab-liha",
-      "Kebabliha",
-      "Kinkku",
-      "Mozzarellajuusto",
-      "Naudanliha",
-      "Oliivi",
-      "Paprika",
-      "Pekoni",
-      "Pepperoni",
-      "Salami",
-      "Simpukka",
-      "Sipuli",
-      "Tacokastike",
-      "Tomaatti",
-      "Tomaattikastike",
-      "Tonnikala"
-    ]
+  "restaurants": {
+    "mardin-tampere": {
+      "id": "mardin-tampere",
+      "url": "https://pizza-online.fi/ravintolat/tampere/mardin-tampere/fantasiapizzat",
+      "name": "Mardin Tampere - Tammela",
+      "toppings": [ "Ananas", "Aurajuusto", "Aurinkokuivattu tomaatti", "Avokado", "Barbequekastike", "Basilika", "Broileri", "Chili", "Chorizomakkara", "Currykastike", "Etanoita", "Falafel", "Fetajuusto", "Habanero", "Häränsuikale", "Herkkusieni", "Herne", "Jalopeno", "Jättikatkaravut", "Jauheliha", "Kana", "Kananmuna", "Kastikkeet", "Katkarapu", "Kebab", "Kebabliha", "Kermakastike", "Kinkku", "Kirsikkatomaatti", "Korianteri", "Kurkku", "Majoneesi", "Mexicana-kastike", "Mozzarella", "Mozzarellajuusto", "Musta oliivi", "Mustapippuri", "Mustekala", "Naudan paahtopaisti", "Oliivi", "Oregano", "Paprika", "Parmankinkku", "Parmesanjuusto", "Parsa", "Pekoni", "Pepperoni", "Pestokastike", "Poronliha", "Punasipuli", "Raejuusto", "Ranskankerma", "Ricottajuusto", "Rucola", "Salami", "Simpukka", "Sipuli", "Sipulirenkaita", "Tabasco", "Tankoparsa", "Texaspete-kastike", "Tonnikala", "Tulinen kastike", "Tuore korianteri", "Tuore tomaattiviipale", "Tuoretomaatti", "Tuplajuusto", "Turkinpippuri", "Valkopippuri", "Valkosipuli", "Vihreä chili" ],
+      "prices": [
+        {
+          "toppingCount": 3,
+          "sizes": [
+            {
+              "name": "Norm.",
+              "price": "9.00"
+            },
+            {
+              "name": "Perhe",
+              "price": "16.00"
+            }
+          ]
+        },
+        {
+          "toppingCount": 4,
+          "sizes": [
+            {
+              "name": "Norm.",
+              "price": "10.00"
+            },
+            {
+              "name": "Perhe",
+              "price": "18.00"
+            }
+          ]
+        },
+        {
+          "toppingCount": 5,
+          "sizes": [
+            {
+              "name": "Norm.",
+              "price": "11.00"
+            },
+            {
+              "name": "Perhe",
+              "price": "20.00"
+            }
+          ]
+        },
+        {
+          "toppingCount": 6,
+          "sizes": [
+            {
+              "name": "Norm.",
+              "price": "12.00"
+            },
+            {
+              "name": "Perhe",
+              "price": "22.00"
+            }
+          ]
+        }
+      ]
+    },
+    "powerpizzeria": {
+      "id": "powerpizzeria",
+      "url": "https://pizza-online.fi/ravintolat/tampere/powerpizzeria/",
+      "name": "Power Pizzeria",
+      "toppings": [ "Ananas", "Aurajuusto", "Aurinkokuivattu tomaatti", "Basilika", "Chili", "Fetajuusto", "Herkkusieni", "Herne", "Jäävuorisalaatti", "Jauheliha", "Juusto", "Kana", "Kananmuna", "Katkarapu", "Kebabliha", "Kesäkurpitsa", "Kinkku", "Kirsikkatomaatti", "Maissi", "Makkara", "Mozzarellajuusto", "Musta oliivi", "Oliivi", "Paprika", "Parmesan", "Pekoni", "Pepperoni", "Punasipuli", "Rukola", "Salami", "Simpukka", "Sipuli", "Spicy vihreä paprika", "Tomaatti", "Tonnikala", "Tuore paprika", "Tuore persilja", "Tuore sitruuna", "Tuplajuusto", "Vuohejuusto", "Vuohenjuusto" ],
+      "prices": [
+        {
+          "toppingCount": 5,
+          "sizes": [
+            {
+              "name": "Norm.",
+              "price": "9.90"
+            },
+            {
+              "name": "Pannu",
+              "price": "12.90"
+            },
+            {
+              "name": "Perhe",
+              "price": "18.90"
+            }
+          ]
+        }
+      ]
+    },
+    "bellpizza": {
+      "id": "bellpizza",
+      "url": "https://pizza-online.fi/ravintolat/tampere/bellpizza/",
+      "name": "Bell Pizza",
+      "toppings": [ "Ananas", "Aurajuusto", "Fetajuusto", "Herkkusieni", "Jalapeno", "Jauheliha", "Juusto", "Kana", "Kananmuna", "Kapris", "Katkarapu", "Kebab", "Kinkku", "Mozzarella", "Mustapippuri", "Oliivi", "Paprika", "Parsa", "Pekoni", "Pepperoni", "Salami", "Simpukka", "Sipuli", "Tacokastike", "Tomaatti", "Tonnikala", "Tuplajuusto", "Vegaani kebab", "Vegaaninen juusto", "Vegaaninen sinihomejuusto" ],
+      "prices": [
+        {
+          "toppingCount": 4,
+          "sizes": [
+            {
+              "name": "Norm.",
+              "price": "9.40"
+            },
+            {
+              "name": "Calzone",
+              "price": "9.40"
+            },
+            {
+              "name": "Pannu",
+              "price": "12.90"
+            },
+            {
+              "name": "Perhe",
+              "price": "17.00"
+            }
+          ]
+        }
+      ]
+    },
+    "tahtipyynikki": {
+      "id": "tahtipyynikki",
+      "url": "https://pizza-online.fi/ravintolat/tampere/capricciosapyynikki/",
+      "name": "Ristorante Capricciosa  Pyynikki",
+      "toppings": [ "americanokastike", "Amerikan kastike", "Ananas", "aurajuusto", "BBQ-kastike", "chili", "currykastike", "Falafel", "fetajuusto", "Grillattu kesäkurpitsa", "Grillattu munakoiso", "Herkkusieni", "jalapeno", "jauheliha", "Kana", "Kananmuna", "Kapris", "katkarapu", "Kebab", "Kebabliha", "kermakastike", "kinkku", "kinkkua", "Majoneesi", "Manchegojuusto", "mexicanokastike", "mozzarella", "Mozzarellajuusto", "Mozzraellajuusto", "Naudanlihamakkara", "oarsa", "oliivi", "Paprika", "pekoni", "pepperoni", "persikka", "Pesto", "Poronliha", "Punasipuli", "Ranskalaiset", "Salaatti", "salami", "simpukka", "Sipikastike", "Sipuli", "smetana", "Tacokastike", "tomaatti", "tonnikala", "Tuore rucola", "Tuore tomaatti", "tuplajuusto", "Tuplakatkarapu (+1,00 €)", "Tuplapekoni (+1,00 €)", "Turkkilainen pippuri", "Valkosipulimajoneesi" ],
+      "prices": [
+        {
+          "toppingCount": 4,
+          "sizes": [
+            {
+              "name": "Norm.",
+              "price": "9.40"
+            },
+            {
+              "name": "Calzone",
+              "price": "9.90"
+            },
+            {
+              "name": "Pannu",
+              "price": "12.90"
+            },
+            {
+              "name": "Perhe",
+              "price": "15.90"
+            },
+            {
+              "name": "70 cm",
+              "price": "39.90"
+            }
+          ]
+        }
+      ]
+    },
+    "pizzeriadrina": {
+      "id": "pizzeriadrina",
+      "url": "https://pizza-online.fi/ravintolat/tampere/pizzeriadrina/",
+      "name": "Pizzeria Kebab Drina",
+      "toppings": [ "Ananas", "Aurajuusto", "Chili", "Fetajuusto", "Herkkusieni", "Jalapeno", "Jalopeno", "Jauheliha", "Kana", "Kananmuna", "Katkarapu", "Kebabliha", "Kinkku", "Musta oliivi", "Mustapippuri", "Naudanliha", "Oliivi", "Paprika", "Pekoni", "Pepperoni", "Punasipuli", "Rucola", "Salami", "Simpukka", "Sinihomejuusto", "Sipuli", "Texas pete-kastike", "Tomaatti", "Tonnikala", "Tuore tomaattiviipale", "Tuplajuusto", "Turkinpippuri" ],
+      "prices": [
+        {
+          "toppingCount": 2,
+          "sizes": [
+            {
+              "name": "Norm.",
+              "price": "8.50"
+            },
+            {
+              "name": "Perhe",
+              "price": "16.00"
+            }
+          ]
+        },
+        {
+          "toppingCount": 3,
+          "sizes": [
+            {
+              "name": "Norm.",
+              "price": "9.00"
+            },
+            {
+              "name": "Perhe",
+              "price": "17.00"
+            }
+          ]
+        },
+        {
+          "toppingCount": 4,
+          "sizes": [
+            {
+              "name": "Norm.",
+              "price": "9.50"
+            },
+            {
+              "name": "Perhe",
+              "price": "18.00"
+            }
+          ]
+        }
+      ]
+    },
+    "hampinpizzeria": {
+      "id": "hampinpizzeria",
+      "url": "https://pizza-online.fi/ravintolat/tampere/hampinpizzeria/",
+      "name": "Hämpin Pizzeria",
+      "toppings": [ "Americankastike", "Ananas", "Aurajuusto", "Chili", "Falafel", "Fetajuusto", "Herkkusieni", "Jäävuorisalaatti", "Jalopeno", "Jauheliha", "Juusto", "Kana", "Katkarapu", "Kebab-liha", "Kinkku", "Mozzarellajuusto", "Oliiviöljy", "Paprika", "Pekoni", "Pepperoni", "Salami", "Simpukka", "Sipuli", "Tomaatti", "Tonnikala" ],
+      "prices": [
+        {
+          "toppingCount": 4,
+          "sizes": [
+            {
+              "name": "Norm.",
+              "price": "10.90"
+            },
+            {
+              "name": "Perhe",
+              "price": "17.90"
+            }
+          ]
+        }
+      ]
+    },
+    "kalevanpizzeria": {
+      "id": "kalevanpizzeria",
+      "url": "https://pizza-online.fi/ravintolat/tampere/kalevanpizzeria/",
+      "name": "Kalevan Pizzeria",
+      "toppings": [ "Amerikankastike", "Ananas", "Aurajuusto", "Aurinkokuivattu tomaatti", "Barbequekastike", "Cheddarjuusto", "Chili", "Currykastike", "Falafel", "Fetajuusto", "Herkkusieni", "Hot sauce", "Jäävuorisalaatti", "Jalapeno", "Jalopeno", "Jauheliha", "Kana", "Kananmuna", "Katkarapu", "Kebab-liha", "Kebabliha", "Kinkku", "Kreikkalainen oliivi", "Maustettu naudanliha", "Mozzarellajuusto", "Naudanliha", "Oliivi", "Paneroituja sipulirenkaita", "Paprika", "Parsa", "Pekoni", "Pepperoni", "Persikka", "Punasipuli", "Salaatti", "Salami", "Siipikastike", "Simpukka", "Sipuli", "Tacokastike", "Tandorimauste", "Tomaatti", "Tonnikala", "Tulinen kastike", "Tuplajuusto", "Tuplakatkarapu" ],
+      "prices": [
+        {
+          "toppingCount": 3,
+          "sizes": [
+            {
+              "name": "Norm.",
+              "price": "9.40"
+            },
+            {
+              "name": "Pannu",
+              "price": "13.30"
+            },
+            {
+              "name": "Perhe",
+              "price": "17.30"
+            }
+          ]
+        },
+        {
+          "toppingCount": 4,
+          "sizes": [
+            {
+              "name": "Norm.",
+              "price": "10.29"
+            },
+            {
+              "name": "Pannu",
+              "price": "13.30"
+            },
+            {
+              "name": "Perhe",
+              "price": "17.30"
+            }
+          ]
+        }
+      ]
+    },
+    "koikkarikaleva": {
+      "id": "koikkarikaleva",
+      "url": "https://pizza-online.fi/ravintolat/tampere/capricciosa/",
+      "name": "Ristorante Capricciosa Kaleva",
+      "toppings": [ "americanokastike", "Amerikan kastike", "Ananas", "Aurajuusto", "BBQ-kastike", "Chili", "Currykastike", "Falafel", "Fetajuusto", "Grillattu kesäkurpitsa", "Grillattu munakoiso", "Herkkusieni", "jalapeno", "Jauheliha", "Kana", "Kananmuna", "Kapris", "Katkarapu", "Kebab", "Kebabliha", "kermakastike", "Kinkku", "kinkkua", "Majoneesi", "Manchegojuusto", "mexicanokastike", "mozzarella", "Mozzarellajuusto", "Mozzraellajuusto", "Naudanlihamakkara", "oarsa", "Oliivi", "paprika", "Parsa", "Pekoni", "Pepperoni", "persikka", "Pesto", "Poronliha", "Punasipuli", "Ranskalaiset", "Salaatti", "Salami", "Simpukka", "Sipikastike", "Sipuli", "Smetana", "Tacokastike", "Tomaatti", "Tonnikala", "Tuore korianteri", "Tuore rucola", "Tuore tomaatti", "Tuplajuusto", "Tuplakatkarapu (+1,00 €)", "Tuplapekoni (+1,00 €)", "Turkkilainen pippuri", "Valkosipulimajoneesi" ],
+      "prices": [
+        {
+          "toppingCount": 4,
+          "sizes": [
+            {
+              "name": "Norm.",
+              "price": "9.40"
+            },
+            {
+              "name": "Calzone",
+              "price": "9.90"
+            },
+            {
+              "name": "Pannu",
+              "price": "12.90"
+            },
+            {
+              "name": "Perhe",
+              "price": "15.90"
+            },
+            {
+              "name": "70 cm",
+              "price": "39.90"
+            }
+          ]
+        }
+      ]
+    },
+    "operatampere": {
+      "id": "operatampere",
+      "url": "https://pizza-online.fi/ravintolat/tampere/operatampere/",
+      "name": "Opera",
+      "toppings": [ "Ananas", "Aurajuusto", "Aurinkokuivattu tomaatti", "BBQ-kastike", "Broileri", "Falafel", "Fetajuusto", "Herkkusieni", "Jäävuorisalaatti", "Jalapeno", "Jauheliha", "Kana", "Kananmuna", "Kapris", "Katkarapu", "Kebabliha", "Kinkku", "Maissi", "Majoneesi", "Mozzarella", "Mozzarellajuusto", "Oliivi", "Paahdettu broileri", "Paholaisenhillo", "Paprika", "Parsa", "Pekoni", "Pepperonimakkara", "Persikka", "Poronliha (+1,00 €)", "Punasipuli", "Ranskanperuna", "Rucola", "Salami", "Salamirouhe", "Siipikastike", "Simpukka", "Smetana", "Tacokastike", "Talon majoneesikastike", "Texas Pete-kastike", "Tomaatti", "Tonnikala", "Tuore tomaatti", "Valkosipulimajoneesi", "Vuohenjuusto" ],
+      "prices": [
+        {
+          "toppingCount": 4,
+          "sizes": [
+            {
+              "name": "Norm.",
+              "price": "10.00"
+            },
+            {
+              "name": "Perhe",
+              "price": "18.50"
+            }
+          ]
+        }
+      ]
+    },
+    "etelankebabpizzeria": {
+      "id": "etelankebabpizzeria",
+      "url": "https://pizza-online.fi/ravintolat/tampere/etelankebabpizzeria/",
+      "name": "Etelän Kebab House",
+      "toppings": [ "Ananas", "Anjovis", "Aurajuusto", "Aurinkokuivattu tomaatti", "Aurinkokuivattutomaatti", "Banaani", "Basilika", "BBQ-kastike", "Chili", "Chilikastike", "Extrajuusto", "Falafel", "Fetajuusto", "Herkkusieni", "Jalapeno", "Jalopeno", "Jauheliha", "Juusto", "Kana", "Kananmuna", "Kapris", "Katkarapu", "Kebab", "Kebab-liha", "Kebabliha", "Kinkku", "Kirsikkatomaatti", "Mozzarella", "Mozzarellajuusto", "Munakoiso", "Naudanliha", "Oliivi", "Paprika", "Parmankinkku", "Parsa", "Pekoni", "Pepperoni", "Pesto", "Pestokastike", "Pinjansiemen", "Punasipuli", "Rucola", "Salami", "Savulohi", "Simpukka", "Sinihomejuusto", "Sipuli", "Sipulirenkaat", "Smetana", "Suolakurkku", "Texas Pete- kastike", "Tomaatti", "Tomaattikastike", "Tonnikala", "Tuore herkkusieni", "Tuore Paprika", "Tuore rucola", "Tuplajuusto", "Vuohenjuusto" ],
+      "prices": [
+        {
+          "toppingCount": 3,
+          "sizes": [
+            {
+              "name": "Norm.",
+              "price": "9.90"
+            },
+            {
+              "name": "Pannu",
+              "price": "11.90"
+            },
+            {
+              "name": "50cm",
+              "price": "21.50"
+            }
+          ]
+        },
+        {
+          "toppingCount": 4,
+          "sizes": [
+            {
+              "name": "Norm.",
+              "price": "10.90"
+            },
+            {
+              "name": "Pannu",
+              "price": "11.90"
+            },
+            {
+              "name": "50cm",
+              "price": "21.50"
+            }
+          ]
+        },
+        {
+          "toppingCount": 5,
+          "sizes": [
+            {
+              "name": "Norm.",
+              "price": "11.90"
+            },
+            {
+              "name": "Pannu",
+              "price": "11.90"
+            },
+            {
+              "name": "50cm",
+              "price": "21.50"
+            }
+          ]
+        }
+      ]
+    },
+    "gogopizza": {
+      "id": "gogopizza",
+      "url": "https://pizza-online.fi/ravintolat/tampere/gogopizza/",
+      "name": "Go Go Pizza",
+      "toppings": [ "Ananas", "Aurajuusto", "Barbequekastike", "Chorizomakkara", "Fetajuusto", "Herkkusieni", "Herne", "Jäävuorisalaatti", "Jalapeno", "Jalopeno", "Jauheliha", "Kana", "Kananmuna", "Kapris", "Katkarapu", "Kebabliha", "Kinkku", "Maissi", "Majoneesi", "Mozzarellajuusto", "Naudan paahtopaisti", "Oliivi", "Paprika", "Parsa", "Pekoni", "Pepperoni", "Punasipuli", "Salami", "Siipikastike", "Simpukka", "Tomaatti", "Tonnikala", "Tuplajuusto", "Tuplapaksu pizzapohja", "Vihreä basilika", "Vihreä rucola", "Vuohenmaitojuusto" ],
+      "prices": [
+        {
+          "toppingCount": 4,
+          "sizes": [
+            {
+              "name": "Norm.",
+              "price": "9.50"
+            },
+            {
+              "name": "Calzone",
+              "price": "9.50"
+            },
+            {
+              "name": "Pannu",
+              "price": "12.00"
+            },
+            {
+              "name": "Perhe",
+              "price": "16.00"
+            },
+            {
+              "name": "Kuningas",
+              "price": "30.00"
+            }
+          ]
+        },
+        {
+          "toppingCount": 6,
+          "sizes": [
+            {
+              "name": "Norm.",
+              "price": "12.00"
+            },
+            {
+              "name": "Perhe",
+              "price": "20.00"
+            }
+          ]
+        }
+      ]
+    },
+    "pizzaservice-amuri": {
+      "id": "pizzaservice-amuri",
+      "url": "https://pizza-online.fi/ravintolat/tampere/pizzaservice-amuri/",
+      "name": "Pizza Service - Amuri",
+      "toppings": [ "Ananas", "Aurajuusto", "Chili", "Feta", "Fetajuusto", "Herkkusieni", "Jäävuorisalaatti", "Jalapeno", "Jalopeno", "Jauheliha", "Juusto", "Kana", "Kananmuna", "Kapris", "Katkarapu", "Kebab", "Kebabliha", "Kinkku", "Kurkku", "Maustettu naudanliha", "Mozzarella", "Mozzarella-cheddar sekoitus", "Muna", "Naudanliha", "Oliivi", "Paprika", "Parsa", "Pekoni", "Pepperoni", "Pepporoni", "Salami", "Simpukka", "Sipuli", "Tacokastike", "Tomaatti", "Tonnikala", "Tuplajuusto" ],
+      "prices": [
+        {
+          "toppingCount": 4,
+          "sizes": [
+            {
+              "name": "Norm.",
+              "price": "8.90"
+            },
+            {
+              "name": "Calzone",
+              "price": "8.90"
+            },
+            {
+              "name": "Pannu",
+              "price": "14.50"
+            },
+            {
+              "name": "Perhe",
+              "price": "18.00"
+            }
+          ]
+        }
+      ]
+    },
+    "memory-time": {
+      "id": "memory-time",
+      "url": "https://pizza-online.fi/ravintolat/tampere/memory-time/",
+      "name": "Memory Time",
+      "toppings": [ "Ananas", "Aurajuusto", "Chili", "Extrajuusto", "Fetajuusto", "Herkkusieni", "Jalapeno", "Jalopeno", "Jauheliha", "Kana", "Kapris", "Katkarapu", "Kebabliha", "Kinkku", "Majoneesi", "Mozzarellajuusto", "Oliivi", "Paprika", "Pepperoni", "Pepperonimakkara", "Pippurisekoitus", "Punasipuli", "Salami", "Simpukka", "Sipuli", "Tacokastike", "Tomaatti", "Tomaattisiivu", "Tonnikala", "Tuplajuusto", "Valkosipuli" ],
+      "prices": [
+        {
+          "toppingCount": 4,
+          "sizes": [
+            {
+              "name": "Norm.",
+              "price": "8.90"
+            },
+            {
+              "name": "Perhe",
+              "price": "16.00"
+            }
+          ]
+        }
+      ]
+    },
+    "midways": {
+      "id": "midways",
+      "url": "https://pizza-online.fi/ravintolat/tampere/midways/",
+      "name": "Midway‘s Pizzeria",
+      "toppings": [ "Ananas", "Aurajuusto", "Fetajuusto", "Herkkusieni", "Jalopeno", "Jauheliha", "Juusto", "Kana", "Katkarapu", "Kebabliha", "Kinkku", "Mozzarellajuusto", "Oliivi", "Paprika", "Pekoni", "Pepperoni", "Salami", "Simpukka", "Sipuli", "Tomaatti", "Tonnikala", "Tuplajuusto" ],
+      "prices": [
+        {
+          "toppingCount": 3,
+          "sizes": [
+            {
+              "name": "Norm.",
+              "price": "10.50"
+            },
+            {
+              "name": "Perhe",
+              "price": "19.00"
+            }
+          ]
+        }
+      ]
+    },
+    "fin-tampere": {
+      "id": "fin-tampere",
+      "url": "https://pizza-online.fi/ravintolat/tampere/fin-tampere/",
+      "name": "Fin Pizzeria",
+      "toppings": [ "Amerikankastike", "Ananas", "Aurajuusto", "Aurinkokuivattu tomaatti", "Barbequekastike", "Cheddarjuusto", "Chili", "Currykastike", "Falafel", "Fetajuusto", "Herkkusieni", "Hot sauce", "Jäävuorisalaatti", "Jalapeno", "Jalopeno", "Jauheliha", "Kana", "Kananmuna", "Katkarapu", "Kebab-liha", "Kebabliha", "Kinkku", "Kreikkalainen oliivi", "Maustettu naudanliha", "Mozzarellajuusto", "Mustapippuri", "Naudanliha", "Oliivi", "Paneroituja sipulirenkaita", "Paprika", "Parsa", "Pekoni", "Pepperoni", "Persikka", "Punasipuli", "Salaatti", "Salami", "Siipikastike", "Simpukka", "Sipuli", "Tacokastike", "Tandorimauste", "Tomaatti", "Tonnikala", "Tulinen kastike", "Tuplajuusto", "Tuplakatkarapu" ],
+      "prices": [
+        {
+          "toppingCount": 3,
+          "sizes": [
+            {
+              "name": "Norm.",
+              "price": "9.40"
+            },
+            {
+              "name": "Pannu",
+              "price": "13.30"
+            },
+            {
+              "name": "Perhe",
+              "price": "17.30"
+            }
+          ]
+        },
+        {
+          "toppingCount": 4,
+          "sizes": [
+            {
+              "name": "Norm.",
+              "price": "10.29"
+            },
+            {
+              "name": "Pannu",
+              "price": "13.30"
+            },
+            {
+              "name": "Perhe",
+              "price": "17.30"
+            }
+          ]
+        }
+      ]
+    },
+    "pizzeriaeiffel": {
+      "id": "pizzeriaeiffel",
+      "url": "https://pizza-online.fi/ravintolat/tampere/pizzeriaeiffel/",
+      "name": "Pizzeria Eiffel",
+      "toppings": [ "Americankastike", "Ananas", "Aurajuusto", "Chili", "Currykastike", "Fetajuusto", "Herkkusieni", "Jalopeno", "Jauheliha", "Juusto", "Kana", "Kastike", "Katkarapu", "Kebab-liha", "Kebabliha", "Kinkku", "Mozzarellajuusto", "Naudanliha", "Oliivi", "Paprika", "Pekoni", "Pepperoni", "Salami", "Simpukka", "Sipuli", "Tomaatti", "Tonnikala", "Tupla pepperoni", "Tuplajuusto", "Tuplakatkarapu" ],
+      "prices": [
+        {
+          "toppingCount": 4,
+          "sizes": [
+            {
+              "name": "norm.",
+              "price": "9.40"
+            },
+            {
+              "name": "pannu",
+              "price": "14.00"
+            },
+            {
+              "name": "perhe",
+              "price": "17.00"
+            }
+          ]
+        }
+      ]
+    },
+    "latoore": {
+      "id": "latoore",
+      "url": "https://pizza-online.fi/ravintolat/tampere/latoore/",
+      "name": "La Toore",
+      "toppings": [ "Ananas", "Anjovis", "Aurajuusto", "Fetajuusto", "Herkkusieni", "Jalopeno", "Jauheliha", "Kana", "Kapris", "Katkarapu", "Kebab-liha", "Kinkku", "Oliivi", "Paprika", "Parsa", "Pepperoni", "Salami", "Simpukka", "Sipuli", "Tomaatti", "Tonnikala" ],
+      "prices": [
+        {
+          "toppingCount": 3,
+          "sizes": [
+            {
+              "name": "Norm.",
+              "price": "8.90"
+            },
+            {
+              "name": "Perhe",
+              "price": "16.80"
+            }
+          ]
+        }
+      ]
+    },
+    "tammelanpizzeria": {
+      "id": "tammelanpizzeria",
+      "url": "https://pizza-online.fi/ravintolat/tampere/tammelanpizzeria/",
+      "name": "Tammelan Pizzeria",
+      "toppings": [ "Ananas", "Aurajuusto", "Barbaquekastike", "Cheddar", "Fetajuusto", "Herkkusieni", "Jalapeno", "Jauheliha", "Kana", "Kananmuna", "Katkarapu", "Kebab", "Kebabliha", "Kinkku", "Mozzarella", "Mustapippuri", "Oliivi", "Paahdettu broileri", "Paprika", "Pekoni", "Pepperonimakkara", "Persikka", "Pillimehu", "Rucola", "Salami", "Simpukka", "Sipuli", "Sriracha kastike", "Tacokastike", "Talon majoneesi", "Tomaatti", "Tonnikala" ],
+      "prices": [
+        {
+          "toppingCount": 4,
+          "sizes": [
+            {
+              "name": "Norm.",
+              "price": "11.00"
+            },
+            {
+              "name": "Perhe",
+              "price": "21.00"
+            }
+          ]
+        }
+      ]
+    },
+    "kebab14": {
+      "id": "kebab14",
+      "url": "https://pizza-online.fi/ravintolat/tampere/kebab14/",
+      "name": "Pizza Kebab 14",
+      "toppings": [ "Ananas", "Aurajuusto", "Chili", "Edamjuusto", "Fetajuusto", "Herkkusieni", "Hotwings kastike", "Jalopeno", "Jauheliha", "Kana", "Kananmuna", "Katkarapu", "Kebabliha", "Kermakastike", "Kinkku", "Maissi", "Mozzarellajuusto", "Oliivi", "Paprika", "Pekoni", "Pepperoni", "Runsaasti katkarapuja", "Salami", "Simpukka", "Sipuli", "Talon kastike", "Tomaatti", "Tonnikala", "Tuore tomaatti", "Tuplajuusto" ],
+      "prices": [
+        {
+          "toppingCount": 4,
+          "sizes": [
+            {
+              "name": "Norm.",
+              "price": "10.00"
+            },
+            {
+              "name": "Calzone",
+              "price": "10.00"
+            },
+            {
+              "name": "Perhe",
+              "price": "17.00"
+            }
+          ]
+        }
+      ]
+    },
+    "nupelda": {
+      "id": "nupelda",
+      "url": "https://pizza-online.fi/ravintolat/tampere/nupelda/",
+      "name": "Nupelda",
+      "toppings": [ "Americano kastike", "Ananas", "Aurajuusto", "Aurinkokuivattu tomaatti", "Barbequekastike", "BBQ-kastike", "Chili", "Chorizo", "Edamjuusto", "Fetajuusto", "Grillattu kesäkurpitsa", "Grillattu munakoiso", "Herkkusieni", "Jalopeno", "Jauheliha", "Juusto", "Kana", "Kananmuna", "Kapris", "Katkarapu", "Kebabliha", "Kermakastike", "Kinkku", "Koskenlaskijajuusto", "Kurpitsa", "Mozzarella", "Mozzarellajuusto", "Munakoiso", "Oliivi", "Palvikinkku", "Parmesanjuusto", "Pekoni", "Pepperoni", "Pesto", "Punasipuli", "Revitty possu", "Rucola", "Salami", "Siipikastike", "Simpukka", "Sipuli", "Smetana", "Talon Americanokastike", "Talonkastike", "Tomaatti", "Tomaattikastike", "Tonnikala", "Tuore basilika", "Tuore herkkusieni", "Tuore paprika", "Tuore parsa", "Tuore tomaatti", "Tuoretomaatti", "Tuplajuusto" ],
+      "prices": [
+        {
+          "toppingCount": 4,
+          "sizes": [
+            {
+              "name": "Norm.",
+              "price": "10.70"
+            },
+            {
+              "name": "Pannu",
+              "price": "15.00"
+            },
+            {
+              "name": "Perhe",
+              "price": "18.00"
+            }
+          ]
+        }
+      ]
+    },
+    "rozerinpizza": {
+      "id": "rozerinpizza",
+      "url": "https://pizza-online.fi/ravintolat/tampere/rozerinpizza/",
+      "name": "Rozerin Pizza & Kebab",
+      "toppings": [ "Ananas", "Aurajuusto", "Chili", "Chili [vihreä]", "Extrajuusto", "Fetajuusto", "Herkkusieni", "Jalopeno", "Jauheliha", "Kana", "Kananmuna", "Katkarapu", "Kebab-liha", "Kinkku", "Oliivi", "Paprika", "Pekoni", "Pepperoni", "Pepperonisalami", "Salami", "Simpukka", "Sipuli", "Tacokastike", "Tomaatti", "Tonnikala", "Valkosipuli" ],
+      "prices": [
+        {
+          "toppingCount": 3,
+          "sizes": [
+            {
+              "name": "Norm.",
+              "price": "9.60"
+            },
+            {
+              "name": "Perhe",
+              "price": "16.50"
+            }
+          ]
+        },
+        {
+          "toppingCount": 4,
+          "sizes": [
+            {
+              "name": "Norm.",
+              "price": "10.00"
+            },
+            {
+              "name": "Perhe",
+              "price": "17.50"
+            }
+          ]
+        }
+      ]
+    },
+    "hebun-ravintola": {
+      "id": "hebun-ravintola",
+      "url": "https://pizza-online.fi/ravintolat/tampere/hebun-ravintola/",
+      "name": "Hebun Ravintola",
+      "toppings": [ "Ananas", "Aurajuusto", "Fetajuusto", "Herkkusieni", "Jalapeno", "Jauheliha", "Kana", "Kananmuna", "Katkarapu", "Kebabliha", "Kesäkurpitsa", "Kinkku", "Munakoiso", "Oliivi", "Paprika", "Pekoni", "Pepperoni", "Simpukka", "Sipuli", "Tomaatti", "Tonnikala" ],
+      "prices": [
+        {
+          "toppingCount": 4,
+          "sizes": [
+            {
+              "name": "Norm.",
+              "price": "12.00"
+            },
+            {
+              "name": "Pannu",
+              "price": "14.00"
+            },
+            {
+              "name": "Perhe",
+              "price": "20.00"
+            }
+          ]
+        }
+      ]
+    },
+    "hakametsankepsu": {
+      "id": "hakametsankepsu",
+      "url": "https://pizza-online.fi/ravintolat/tampere/kingspizza/",
+      "name": "Kings Pizza",
+      "toppings": [ "Ananas", "Aurajuusto", "Chili", "Fetajuusto", "Herkkusieni", "Jalopeno", "Jauheliha", "Jauhelihakastike", "Juusto", "Kana", "Katkarapu", "Kebab-liha", "Kinkku", "Naudanliha", "Oliivi", "Paprika", "Pekoni", "Pepperoni", "Pepperonimakkara", "Pippurisekoitus", "Punasipuli", "Salami", "Sipuli", "Tacokastike", "Tomaatti", "Tonnikala", "Tuplajuusto" ],
+      "prices": [
+        {
+          "toppingCount": 4,
+          "sizes": [
+            {
+              "name": "Normaali",
+              "price": "10.40"
+            },
+            {
+              "name": "Pannu",
+              "price": "13.40"
+            },
+            {
+              "name": "Perhe",
+              "price": "19.40"
+            },
+            {
+              "name": "60cm",
+              "price": "36.00"
+            }
+          ]
+        }
+      ]
+    },
+    "citypizza": {
+      "id": "citypizza",
+      "url": "https://pizza-online.fi/ravintolat/tampere/citypizza/",
+      "name": "Pizzacity",
+      "toppings": [ "Ananas", "Aurajuusto", "Chili", "Extrajuusto", "Herkkusieni", "Jalapeno", "Jalopeno", "Jauheliha", "Juusto", "Kana", "Katkarapu", "Kebab-liha", "Kebabliha", "Kinkku", "Mozzarellajuusto", "Naudanliha", "Oliivi", "Paprika", "Pekoni", "Pepperoni", "Salami", "Simpukka", "Sipuli", "Tacokastike", "Tomaatti", "Tomaattikastike", "Tonnikala" ],
+      "prices": [
+        {
+          "toppingCount": 3,
+          "sizes": [
+            {
+              "name": "Norm.",
+              "price": "8.60"
+            },
+            {
+              "name": "Perhe",
+              "price": "15.50"
+            }
+          ]
+        }
+      ]
+    },
+    "koikkari": {
+      "id": "koikkari",
+      "url": "https://pizza-online.fi/ravintolat/tampere/koikkari/",
+      "name": "Koikkari",
+      "toppings": [ "Ananas", "Aurajuusto", "Chili", "Fetajuusto", "Herkkusieni", "Jauheliha", "Kana", "Katkarapu", "Kebabliha", "Kinkku", "Mozzarellajuusto", "Oliivi", "Paprika", "Pekoni", "Pepperoni", "Salami", "Sieni", "Sipuli", "Tomaatti", "Tonnikala" ],
+      "prices": [
+        {
+          "toppingCount": 3,
+          "sizes": [
+            {
+              "name": "Normaali",
+              "price": "10.90"
+            },
+            {
+              "name": "Pannu",
+              "price": "13.90"
+            },
+            {
+              "name": "Perhe",
+              "price": "18.90"
+            },
+            {
+              "name": "70cm",
+              "price": "40.00"
+            },
+            {
+              "name": "80cm",
+              "price": "55.00"
+            }
+          ]
+        },
+        {
+          "toppingCount": 4,
+          "sizes": [
+            {
+              "name": "70cm",
+              "price": "40.00"
+            },
+            {
+              "name": "80cm",
+              "price": "55.00"
+            }
+          ]
+        }
+      ]
+    },
+    "hrmlnpizzeria": {
+      "id": "hrmlnpizzeria",
+      "url": "https://pizza-online.fi/ravintolat/tampere/hrmlnpizzeria/",
+      "name": "Sumer Pizzeria ja Kebab",
+      "toppings": [ "Ananas", "Aurajuusto", "Cheddar", "Falafel", "Fetajuusto", "Herkkusieni", "Jalapeno", "Jauheliha", "Juusto", "Kana", "Kananmuna", "Katkarapu", "Kebab", "Kebabliha", "Kinkku", "Maustettu jauheliha", "Mozzarella", "Oliivi", "Paprika", "Pekoni", "Pepperoni", "Persikka", "Salami", "Shawarma kana", "Simpukka", "Sipuli", "Tacokastike", "Tomaatti", "Tonnikala", "Tuplajuusto" ],
+      "prices": [
+        {
+          "toppingCount": 4,
+          "sizes": [
+            {
+              "name": "Norm.",
+              "price": "8.50"
+            },
+            {
+              "name": "Perhe",
+              "price": "16.00"
+            }
+          ]
+        }
+      ]
+    },
+    "huikkaanpizzakebab": {
+      "id": "huikkaanpizzakebab",
+      "url": "https://pizza-online.fi/ravintolat/tampere/huikkaanpizzakebab/",
+      "name": "Huikkaan Grilli",
+      "toppings": [ "Ananas", "Aurajuusto", "Aurinkokuivattu tomaatti", "BBQ-kastike", "Broileri", "Cheddarjuusto", "Fetajuusto", "Herkkusieni", "Jalapeno", "Jauheliha", "Juusto", "kananmuna", "Katkarapu", "Kebab", "Kinkku", "Majoneesi", "Mozzarella", "Musta oliivi", "Mustapippuri", "Oliivi", "Paprika", "Pekoni", "Pepperoni", "Pesto", "Punasipuli", "Rucola", "Salami", "Siipikastike", "Simpukka", "Sipuli", "Sipulli", "Tabasco", "Tomaatti", "Tomaattikastike", "Tonnikala" ],
+      "prices": [
+        {
+          "toppingCount": 4,
+          "sizes": [
+            {
+              "name": "Norm.",
+              "price": "9.50"
+            },
+            {
+              "name": "Perhe",
+              "price": "17.00"
+            }
+          ]
+        }
+      ]
+    },
+    "medzan": {
+      "id": "medzan",
+      "url": "https://pizza-online.fi/ravintolat/tampere/hervannangrilli/",
+      "name": "Hervannan Grilli",
+      "toppings": [ "Ananas", "Aurajuusto", "Cheddar", "Feta", "Fetajuusto", "Herkkusieni", "Hot kastike", "Jalopeno", "Jauheliha", "Juusto", "Kana", "Kananmuna", "Katkarapu", "Kebabliha", "Kinkku", "Mozzarella", "Oliivi", "Paprika", "Parsa", "Pekoni", "Pepperoni", "Salami", "Siipikastike", "Siipiweikko kastike", "Simpukka", "Sipuli", "Tomaatti", "Tomaattikastike", "Tonnikala" ],
+      "prices": [
+        {
+          "toppingCount": 4,
+          "sizes": [
+            {
+              "name": "Norm.",
+              "price": "10.40"
+            },
+            {
+              "name": "Perhe",
+              "price": "17.40"
+            }
+          ]
+        }
+      ]
+    },
+    "multsunpizzeria": {
+      "id": "multsunpizzeria",
+      "url": "https://pizza-online.fi/ravintolat/tampere/multsunpizzeria/",
+      "name": "Multisillan Pizza Service",
+      "toppings": [ "Ananas", "Aurajuusto", "Chili [vihreä]", "Extrajuusto", "Fetajuusto", "Herkkusieni", "Jalopeno", "Jauheliha", "Kana", "Kananmuna", "Katkarapu", "Kebab", "Kebabliha", "Kinkku", "Naudanliha", "Oliivi", "Paprika", "Pekoni", "Pepperoni", "Salami", "Simpukka", "Sipuli", "Tomaatti", "Tonnikala", "Turkin pippuri" ],
+      "prices": [
+        {
+          "toppingCount": 4,
+          "sizes": [
+            {
+              "name": "Norm.",
+              "price": "9.90"
+            },
+            {
+              "name": "Perhe",
+              "price": "16.90"
+            }
+          ]
+        }
+      ]
+    }
   }
 }
