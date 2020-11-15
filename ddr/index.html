@@ -1,0 +1,72 @@
+<html>
+<head>
+    <title>DDR Timing Simulator</title>
+    <style>
+        input[type=number] {
+            width: 100px;
+        }
+        #form {
+            display: flex;
+        }
+        textarea {
+            width: 300px;
+            height: 160px;
+        }
+        .wave {
+            margin-top: 16px;
+        }
+    </style>
+</head>
+<body>
+<form id="form">
+    <div>
+        <textarea id="commands" onchange="update()">
+ACT
+wait tRCD
+RD
+wait 10
+RD
+wait CL
+PRE
+wait tRP
+ACT
+DES
+</textarea>
+        <br/>
+        <button onclick="update()" type="button">Update diagram</button>
+        <span id="summary"></span>
+    </div>
+    <table>
+        <thead>
+        <tr>
+            <th><label for="i_CK">Clock (MHz)</label></th>
+            <th><label for="i_CL">CL</label></th>
+            <th><label for="i_tRCD">tRCD</label></th>
+            <th><label for="i_tRP">tRP</label></th>
+            <th><label for="i_tRAS">tRAS</label></th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <td><input type="number" id="i_CK" value="1600" onchange="update()" min="0" /></td>
+            <td><input type="number" class="timing" id="i_CL" name="CL" value="14" onchange="update()" min="1" /></td>
+            <td><input type="number" class="timing" id="i_tRCD" name="tRCD" value="14" onchange="update()" min="1" /></td>
+            <td><input type="number" class="timing" id="i_tRP" name="tRP" value="14" onchange="update()" min="1" /></td>
+            <td><input type="number" class="timing" id="i_tRAS" name="tRAS" value="34" onchange="update()" min="1" /></td>
+        </tr>
+        <tr>
+            <td id="o_CK"></td>
+            <td id="o_CL"></td>
+            <td id="o_tRCD"></td>
+            <td id="o_tRP"></td>
+            <td id="o_tRAS"></td>
+        </tr>
+        </tbody>
+    </table>
+</form>
+<div id="waveContainer"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/wavedrom/2.6.8/skins/default.js" type="text/javascript"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/wavedrom/2.6.8/wavedrom.min.js" type="text/javascript"></script>
+<script src="./index.js" type="text/javascript"></script>
+</body>
+</html>
