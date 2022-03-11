@@ -124,6 +124,9 @@
         .label.inCombat {
             color: #fa6;
         }
+        .label > .match { color: #888; }
+        .label > .non-match { color: #d33; }
+        .label.inCombat > .match { color: #863; }
     </style>
 </head>
 <body>
@@ -142,13 +145,12 @@ Defeat all enemies to win.
             <span id="currentWordElem"></span><span class="caret">|</span>
         </div>
         <div id="statsContainer">
-            <span id="timeElem"></span> |
-            Health: <span id="healthElem"></span> |
-            XP: <span id="xpElem"></span> |
-            Level: <span id="levelElem"></span>
+            <span id="timeElem">0:00</span> |
+            Health: <span id="healthElem">10</span> |
+            XP: <span id="xpElem">0</span> |
+            Level: <span id="levelElem">1</span>
         </div>
     </div>
-    <script src="words.js"></script>
-    <script src="hextype.js"></script>
+    <script src="index.js" type="module"></script>
 </body>
 </html>
