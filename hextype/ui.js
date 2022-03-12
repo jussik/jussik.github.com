@@ -9,6 +9,9 @@ import { GameEvents } from "./game.js";
 export class Ui extends GameObject {
     body = document.body;
     help = document.getElementById("help");
+    ending = document.getElementById("ending");
+    seedTarget = document.getElementById("seedTarget");
+    seedLink = document.getElementById("seedLink");
     promptElem = document.getElementById("promptElem");
     timeElem = document.getElementById("timeElem");
     xpElem = document.getElementById("xpElem");
@@ -85,12 +88,12 @@ export class Ui extends GameObject {
                 case GameState.Won:
                     this.body.classList.add("won");
                     this.promptElem.textContent = ":)";
-                    this.updateLabels();
+                    this.ended();
                     break;
                 case GameState.Failed:
                     this.body.classList.add("dead");
                     this.promptElem.textContent = ":(";
-                    this.updateLabels();
+                    this.ended();
                     break;
             }
         });
@@ -104,6 +107,15 @@ export class Ui extends GameObject {
         });
     }
     
+    ended() {
+        this.updateLabels();
+        
+        const seedStr = (+this.game.map.seed).toString(16);
+        this.seedTarget.textContent = seedStr;
+        this.seedLink.href += seedStr;
+        this.ending.style.display = "block";
+    }
+
     getCellElement(pos) {
         return this.cellsContainer.querySelector(`.cell-${pos.x}-${pos.y}`);
     }
@@ -142,12 +154,45 @@ export class Ui extends GameObject {
 
     updateLabels() {
         this.labelsContainer.innerHTML = "";
-        if (this.game.state !== GameState.Created && this.game.state !== GameState.Playing)
-            return;
         
-        for (let target of Object.values(this.game.map.wordTargets)) {
-            this.drawOffsetLabel(target);
+        if (this.state === GameState.Created || this.state === GameState.Playing) {
+            for (let target of Object.values(this.game.map.wordTargets)) {
+                this.drawOffsetLabel(target);
+            }
         }
+        
+        this.drawPlayerLabel();
+    }
+    drawPlayerLabel() {
+        const { x, y, health } = this.game.map.player;
+        
+        const div = document.createElement("div");
+        switch (this.state) {
+            case GameState.Won:
+                div.textContent = "😎";
+                break;
+            case GameState.Failed:
+                div.textContent = "😵";
+                break;
+            default:
+                const inCombat = this.labelsContainer.querySelector(".inCombat") != null;
+                if (health > 5) {
+                    div.textContent = inCombat ? "😠" : "🙂";
+                } else if (health > 2) {
+                    div.textContent = inCombat ? "😟" : "🙁";
+                } else {
+                    div.textContent = inCombat ? "😱" : "😰";
+                }
+                break;
+        }
+        
+        let left = x * 100 + (y % 2) * 50 + 14;
+        div.style.left = left + "px";
+        let top = (y + 1) * 91 - 6;
+        div.style.top = top + "px";
+
+        div.className = "label player";
+        this.labelsContainer.appendChild(div);
     }
     drawOffsetLabel(target) {
         const { x, y, offset, word, cell } = target;
