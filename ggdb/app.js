@@ -29,7 +29,8 @@ window.app = new Vue({
         platformClasses: ["visible", "hide", "exclude"],
         filter: "",
         screenshots: [],
-        npointId: null
+        npointId: null,
+        index: null
     },
     components: {
         agile: VueAgile
@@ -44,10 +45,21 @@ window.app = new Vue({
             }
             return Array.from(plats).sort();
         },
-        filterTokens: function() {
+        filteredGames: function() {
             if (!this.filter)
                 return null;
-            return this.filter.toLowerCase().split(/\s+/g);
+            
+            let res;
+            try {
+                res = this.index.search(this.filter);
+            } catch(err) {
+                console.error(err);
+                return [];
+            }
+            
+            return res
+                .sort((a, b) => b.score - a.score)
+                .map(e => this.gamesById[e.ref]);
         }
     },
     watch: {
@@ -93,12 +105,26 @@ window.app = new Vue({
         }
     },
     methods: {
-        updateGameIndex: function(g) {
-            const tokens = [g.title, ...g.genres, ...g.themes, g.summary];
-            g._textIndex = tokens.join("\t").toLowerCase();
-        },
+        debouncedFilter: _.debounce(function(e) {
+            this.filter = e.target.value;
+        }, 200),
         prepareGames: function() {
-            this.games.forEach(g => this.updateGameIndex(g));
+            const games = this.games;
+            this.index = lunr(function () {
+                this.ref("gameId");
+                
+                this.field("title");
+                this.field("genres");
+                this.field("themes");
+                this.field("summary");
+                this.field("year");
+                
+                games.forEach(g => this.add(g));
+            });
+            this.gamesById = this.games.reduce((acc, g) => {
+                acc[g.gameId] = g;
+                return acc;
+            });
             this.sortByName();
         },
         loadGfNow: async function() {
@@ -246,8 +272,6 @@ window.app = new Vue({
                 return false;
             if (game.platforms.some(p => (this.platformVisibility[p] || 0) === PlatformVisibility.Excluded))
                 return false;
-            if (this.filterTokens)
-                return this.filterTokens.every(filter => game._textIndex.indexOf(filter) !== -1);
             return true;
         },
         sortByName: function() {
