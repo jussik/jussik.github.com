@@ -121,10 +121,7 @@ window.app = new Vue({
                 
                 games.forEach(g => this.add(g));
             });
-            this.gamesById = this.games.reduce((acc, g) => {
-                acc[g.gameId] = g;
-                return acc;
-            });
+            this.gamesById = _.keyBy(this.games, "gameId");
             this.sortByName();
         },
         loadGfNow: async function() {
